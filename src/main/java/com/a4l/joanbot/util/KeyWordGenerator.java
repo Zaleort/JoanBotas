@@ -12,7 +12,8 @@ import java.util.Set;
 import java.util.stream.Stream;
 
 public class KeyWordGenerator {
-    private final String titulo, subtitulo, noticia, etiqueta;
+    private final String titulo, subtitulo, noticia;
+    private final String[] etiquetas;
     private String keyPrimaria = "", keySecundaria = "";
 
     public String getKeyPrimaria() {
@@ -33,28 +34,31 @@ public class KeyWordGenerator {
     
     Set<String> ignoradas = new HashSet<>();
     
-    public KeyWordGenerator (String titulo, String subtitulo, String noticia, String etiqueta){
+    public KeyWordGenerator (String titulo, String subtitulo, String noticia, String[] etiquetas){
         this.titulo = titulo;
         this.subtitulo = subtitulo;
         this.noticia = noticia;
-        this.etiqueta = etiqueta;
+        this.etiquetas = etiquetas;
         
         loadFilter();
     }
     
     public void calcularKeyWord(){
-        String[] etiquetas = etiqueta.toLowerCase().replaceAll(" ", "").split(",");
+        for (int i = 0; i < etiquetas.length; i++){
+            etiquetas[i] = etiquetas[i].toLowerCase();
+        }
+        
         String tNoticia = noticia.toLowerCase();
         for (String str : etiquetas){
             if (tNoticia.contains(str)){
                 if (keyPrimaria.isEmpty())
                     keyPrimaria = str;
-                
+
                 else if (keySecundaria.isEmpty()){
                     keySecundaria = str;
                     break;
                 }
-            }     
+            } 
         }
         
         if (keyPrimaria.isEmpty() || keySecundaria.isEmpty()){
@@ -125,22 +129,32 @@ public class KeyWordGenerator {
                 keySecundaria = palabras[key2[1]];
             }
             
-            else if (keyPrimaria.isEmpty() && keySecundaria.isEmpty()){
+            else if (!keyPrimaria.isEmpty() && keySecundaria.isEmpty()){
                 keySecundaria = palabras[key1[1]];
             }
         }
         
-        System.out.println(keyPrimaria);
-        System.out.println(keySecundaria);
+        System.out.println("Palabra clave primaria: " + keyPrimaria);
+        System.out.println("Palabra clave secundaria: " + keySecundaria);
     }
     
     private void loadFilter(){
-        Path path = Paths.get(".\\src\\main\\resources\\filter.txt");
+        Path path = Paths.get("filter.txt");
         try  (Stream<String> lines = Files.lines(path, Charset.forName("ISO-8859-1"))) {
             lines.forEach(s -> ignoradas.add(s));
         
         } catch (IOException ex) {
-            
+            System.out.println("Archivo Filtro no encontrado");
+            ignoradas.add("que");
+            ignoradas.add("qué");
+            ignoradas.add("a");
+            ignoradas.add("y");
+            ignoradas.add("como");
+            ignoradas.add("aun");
+            ignoradas.add("de");
+            ignoradas.add("el");
+            ignoradas.add("la");
+            ignoradas.add("es");
         }
     }
 }

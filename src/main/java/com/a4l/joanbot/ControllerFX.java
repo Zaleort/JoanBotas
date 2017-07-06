@@ -1,8 +1,3 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package com.a4l.joanbot;
 
 import com.a4l.joanbot.util.DriverHandler;
@@ -27,7 +22,6 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
-import javafx.event.EventHandler;
 import javafx.scene.Node;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Alert.AlertType;
@@ -43,12 +37,8 @@ import javafx.scene.layout.AnchorPane;
 import javafx.stage.FileChooser;
 import javafx.stage.Modality;
 import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.WebDriverException;
 
-/**
- * FXML Controller class
- *
- * @author Henrique
- */
 public class ControllerFX implements Initializable {
     private WebDriver driver;
     private File currentFile = null;
@@ -100,68 +90,81 @@ public class ControllerFX implements Initializable {
         showUiCount(tNoticia, tNoticiaCount, 2000);
         
         // Hace que tabule el área de texto
-        tNoticia.addEventFilter(KeyEvent.KEY_PRESSED, new EventHandler<KeyEvent>() {
-        @Override
-            public void handle(KeyEvent event) {
-                if (event.getCode().equals(KeyCode.TAB)) {
+        tNoticia.addEventFilter(KeyEvent.KEY_PRESSED, (KeyEvent event) -> {
+            if (event.getCode().equals(KeyCode.TAB)) {
                 Node node = (Node) event.getSource();
-                    if (node instanceof TextArea) {
-                        TextAreaSkin skin = (TextAreaSkin) ((TextArea)node).getSkin();
-                        if (event.isShiftDown()) {
-                            skin.getBehavior().traversePrevious();
-                        }
-                        else {
-                            skin.getBehavior().traverseNext();
-                        }
-                    } 
-                event.consume();
+                if (node instanceof TextArea) {
+                    TextAreaSkin skin = (TextAreaSkin) ((TextArea)node).getSkin();
+                    if (event.isShiftDown()) {
+                        skin.getBehavior().traversePrevious();
+                    }
+                    else {
+                        skin.getBehavior().traverseNext();
+                    }
                 }
+                event.consume();
             }
         });
     } 
     
     @FXML private void sendNoticia(ActionEvent event){
-        
         if(DriverHandler.isLogged(driver)){
-            String categoria, titulo, subtitulo, noticia, fuentes, etiquetas;
+            String categoria, titulo, subtitulo, noticia, fuentes;
+            String[] etiquetas;
             categoria = (String)categorias.getValue();
             titulo = tTitulo.getText();
             subtitulo = tSubtitulo.getText();
             noticia = tNoticia.getText();
             fuentes = tFuentes.getText();
-            etiquetas = tEtiquetas.getText();
+            etiquetas = getEtiquetas(tEtiquetas.getText());
             
             if (isCorrect(titulo, subtitulo, noticia, etiquetas, fuentes, categoria)){
-				try {
-					KeyWordGenerator kwg = new KeyWordGenerator(titulo, subtitulo, noticia, etiquetas);
-					kwg.calcularKeyWord();
+                try {
+                    KeyWordGenerator kwg = new KeyWordGenerator(titulo, subtitulo, noticia, etiquetas);
+                    kwg.calcularKeyWord();
 
-					String urlP, urlS;
-					urlP = DriverHandler.fastSearch(kwg.getKeyPrimaria(), driver);
-					urlS = DriverHandler.fastSearch(kwg.getKeySecundaria(), driver);
+                    String urlP, urlS;
+                    urlP = DriverHandler.fastSearch(kwg.getKeyPrimaria(), driver);
+                    urlS = DriverHandler.fastSearch(kwg.getKeySecundaria(), driver);
 
-					driver.get("http://blast.blastingnews.com/news/edit/");
-					Thread.sleep(250);
+                    driver.get("http://blast.blastingnews.com/news/edit/");
 
-					DriverHandler.setCategory(driver, categoria);
-					DriverHandler.writeTitle(driver, titulo);
-					DriverHandler.writeSubtitle(driver, subtitulo);
-					DriverHandler.setPhoto(driver);
-					DriverHandler.setNoBlasterHelp(driver);
+                    DriverHandler.setCategory(driver, categoria);
+                    if (DriverHandler.writeTitle(driver, titulo)){
+                        DriverHandler.writeSubtitle(driver, subtitulo);
+                        boolean isCorrect = DriverHandler.setPhoto(driver);
+                        DriverHandler.setNoBlasterHelp(driver);
 
-					buildNoticia(noticia, kwg.getKeyPrimaria(), kwg.getKeySecundaria(), urlP, urlS);
+                        buildNoticia(noticia, kwg.getKeyPrimaria(), kwg.getKeySecundaria(), urlP, urlS);
 
-					DriverHandler.setEtiquetas(driver, getEtiquetas(etiquetas));
-					DriverHandler.writeFuentes(driver, fuentes);
-					DriverHandler.sendNews(driver);
+                        DriverHandler.setEtiquetas(driver, etiquetas);
+                        DriverHandler.writeFuentes(driver, fuentes);
+                        
+                        if (!isCorrect){
+                            DriverHandler.saveNews(driver);
+                            Alert alert = new Alert(AlertType.ERROR);
+                            alert.setTitle("Error");
+                            alert.setHeaderText(null);
+                            alert.setContentText("Se ha enviado la noticia, pero con errores. Avisa al administrador");
+                            alert.showAndWait();
+                        }
+                        
+                        else {
+                            DriverHandler.sendNews(driver);
+                            Alert alert = new Alert(AlertType.INFORMATION);
+                            alert.setTitle("Éxito");
+                            alert.setHeaderText(null);
+                            alert.setContentText("Noticia enviada con éxito");
+                            alert.showAndWait();
+                        }
+                    }
 
-					DriverHandler.takeScreenshot(driver);
-
-				} catch (InterruptedException ex) {
-					Logger.getLogger(MainForm.class.getName()).log(Level.SEVERE, null, ex);
-				} catch (IOException ex) {
-					Logger.getLogger(MainForm.class.getName()).log(Level.SEVERE, null, ex);
-				} 
+                } catch (InterruptedException | IOException ex) {
+                    Logger.getLogger(MainFX.class.getName()).log(Level.SEVERE, null, ex);
+                } catch (WebDriverException e){
+                    System.out.println(e.getMessage());
+                    System.out.println("Algo ha salido mal...");
+                }
             }
             
             else {
@@ -201,6 +204,11 @@ public class ControllerFX implements Initializable {
             DriverHandler.login(user, passwd, driver);
             DriverHandler.closePopUp(driver);
         }
+    }
+    
+    // TODO: LogOut
+    private void logOut(){
+        driver.get("http://blaster.blastingnews.com/services/logout/");
     }
     
     @FXML private void newNoticia(ActionEvent e){
@@ -308,40 +316,89 @@ public class ControllerFX implements Initializable {
             currentFile = file;
         }
     }
-    
-    // TODO: ¿Estás seguro de que deseas salir, coño?
+
     @FXML private void mSalirAction(ActionEvent e){
-        Platform.exit();
+        Alert closeConfirmation = new Alert(
+                Alert.AlertType.CONFIRMATION,
+                "¿Estás seguro de que quieres salir?"
+        );
+        Button exitButton = (Button) closeConfirmation.getDialogPane().lookupButton(
+                ButtonType.OK
+        );
+        exitButton.setText("Salir");
+        closeConfirmation.setHeaderText(null);
+        closeConfirmation.initModality(Modality.APPLICATION_MODAL);
+
+        Optional<ButtonType> closeResponse = closeConfirmation.showAndWait();
+        if (ButtonType.OK.equals(closeResponse.get())) {
+            Platform.exit();
+        }
     }
     
     private void buildNoticia(String noticia, String keyPrimaria, String keySecundaria, String urlP, String urlS) throws InterruptedException, IOException{
-        int indexKP, lastIndexKP, indexKS, lastIndexKS;
-        StringBuilder builder = new StringBuilder(noticia);
+        int indexKP, indexKS, index1, index2, lIndex1, lIndex2;
+        boolean orden;
+        String builder = noticia.toLowerCase();
         
-        indexKP = builder.indexOf(keyPrimaria);
-        lastIndexKP = builder.lastIndexOf(keyPrimaria);
-        indexKS = builder.indexOf(keySecundaria);
-        lastIndexKS = builder.lastIndexOf(keySecundaria);
+        indexKP = builder.indexOf(keyPrimaria + " ");
+        if (indexKP == -1)
+            indexKP = builder.indexOf(keyPrimaria + ".");
+        if (indexKP == -1)
+            indexKP = builder.indexOf(keyPrimaria);
         
-        System.out.println(indexKP);
-        System.out.println(indexKS);
-        System.out.println(lastIndexKP);
-        System.out.println(lastIndexKS);
+        indexKS = builder.indexOf(keySecundaria + " ");
+        if (indexKS == -1)
+            indexKS = builder.indexOf(keySecundaria + ".");
+        if (indexKS == -1)
+            indexKS = builder.indexOf(keySecundaria);
+        
+        if (indexKP < indexKS){
+            orden = true;
+            index1 = indexKP;
+            lIndex1 = keyPrimaria.length();
+            index2 = indexKS;
+            lIndex2 = keySecundaria.length();
+        }
+        
+        else {
+            orden = false;
+            index1 = indexKS;
+            lIndex1 = keySecundaria.length();
+            index2 = indexKP;
+            lIndex2 = keyPrimaria.length();
+        }
+        
+        System.out.println("Index 1: " + indexKP);
+        System.out.println("Index 2: " + indexKS);
+        System.out.println("Primaria length: " + keyPrimaria.length());
+        System.out.println("Secundaria length: " + keySecundaria.length());
         
         String subNoticia, subNoticia2, subNoticia3;
+        
+        if (Character.isUpperCase(noticia.charAt(indexKP)))
+            keyPrimaria = keyPrimaria.substring(0, 1).toUpperCase() + keyPrimaria.substring(1);
+        if (Character.isUpperCase(noticia.charAt(indexKS)))
+            keySecundaria = keySecundaria.substring(0, 1).toUpperCase() + keySecundaria.substring(1);
+        
+        subNoticia = noticia.substring(0, index1);
+        subNoticia2 = noticia.substring(index1 + lIndex1, index2);
+        subNoticia3 = noticia.substring(index2 + lIndex2);
 
-        subNoticia = builder.substring(0, indexKP);
-        subNoticia2 = builder.substring(indexKP + keyPrimaria.length(), indexKS);
-        subNoticia3 = builder.substring(indexKS + keySecundaria.length());
+        if (orden){
+            DriverHandler.writeNews(driver, subNoticia);
+            DriverHandler.addLink(driver, urlP, keyPrimaria);
+            DriverHandler.writeNews(driver, subNoticia2);
+            DriverHandler.addLink(driver, urlS, keySecundaria);
+            DriverHandler.writeNews(driver, subNoticia3);
+        }
         
-        System.out.println(subNoticia2);
-        
-        DriverHandler.writeNews(driver, subNoticia);
-        DriverHandler.addLink(driver, urlP, keyPrimaria);
-        Thread.sleep(50);
-        DriverHandler.writeNews(driver, subNoticia2);
-        DriverHandler.addLink(driver, urlS, keySecundaria);
-        DriverHandler.writeNews(driver, subNoticia3);
+        else {
+            DriverHandler.writeNews(driver, subNoticia);
+            DriverHandler.addLink(driver, urlS, keySecundaria);
+            DriverHandler.writeNews(driver, subNoticia2);
+            DriverHandler.addLink(driver, urlP, keyPrimaria);
+            DriverHandler.writeNews(driver, subNoticia3);
+        }
     }
     
     private UnaryOperator<Change> maxLength(int len){
@@ -427,18 +484,19 @@ public class ControllerFX implements Initializable {
       String[] res = etiquetas.split(",");
       
       for (int i = 0; i < res.length; i++){
-          res[i].trim();
+          res[i] = res[i].trim();
       }
       
       return res;
     }
     
-    private boolean isCorrect(String titulo, String subtitulo, String noticia, String etiquetas, String fuentes, String categoria){
+    private boolean isCorrect(String titulo, String subtitulo, String noticia, String[] etiquetas, String fuentes, String categoria){
         return  (countStringLength(titulo, true) >= 30 &&
                 countStringLength(subtitulo, true) >= 70 &&
                 countStringLength(noticia, false) >= 2000 &&
                 !categoria.isEmpty() &&
-                !etiquetas.isEmpty() &&
+                etiquetas.length >= 2 &&
+                etiquetas.length <= 3 &&
                 !fuentes.isEmpty()); 
     }
 }

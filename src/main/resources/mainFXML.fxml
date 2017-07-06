@@ -11,6 +11,7 @@
 <?import javafx.scene.control.SeparatorMenuItem?>
 <?import javafx.scene.control.TextArea?>
 <?import javafx.scene.control.TextField?>
+<?import javafx.scene.control.Tooltip?>
 <?import javafx.scene.input.KeyCodeCombination?>
 <?import javafx.scene.layout.AnchorPane?>
 <?import javafx.scene.text.Font?>
@@ -69,7 +70,7 @@
          <font>
             <Font size="13.0" />
          </font></Label>
-      <ComboBox fx:id="categorias" layoutX="15.0" layoutY="55.0" prefHeight="25.0" prefWidth="189.0" promptText="Selecciona una categoría" style="-fx-border-radius: none; -fx-background-color: #eee;" AnchorPane.leftAnchor="14.0"/>
+      <ComboBox fx:id="categorias" layoutX="15.0" layoutY="55.0" prefHeight="25.0" prefWidth="189.0" promptText="Selecciona una categoría" style="-fx-border-radius: none; -fx-background-color: #eee;" AnchorPane.leftAnchor="14.0" />
       <TextField fx:id="tTitulo" layoutX="15.0" layoutY="110.0" onAction="#sendNoticia" prefHeight="25.0" prefWidth="700.0" promptText="Escribe el titular de la noticia, entre 30 y 80 caracteres" styleClass="textField">
          <font>
             <Font size="13.0" />
@@ -94,15 +95,18 @@
          <font>
             <Font size="13.0" />
          </font></TextArea>
-      <Label layoutX="15.0" layoutY="520.0" text="Etiquetas:">
+      <Label layoutX="15.0" layoutY="530.0" text="Etiquetas:">
          <font>
             <Font size="13.0" />
          </font>
       </Label>
-      <TextField fx:id="tEtiquetas" layoutX="75.0" layoutY="515.0" onAction="#sendNoticia" prefHeight="25.0" prefWidth="640.0" promptText="Escribe hasta 3 etiquetas, separadas por comas">
+      <TextField fx:id="tEtiquetas" layoutX="75.0" layoutY="525.0" onAction="#sendNoticia" prefHeight="25.0" prefWidth="640.0" promptText="Escribe de 2 a 3 etiquetas, separadas por comas">
          <font>
             <Font size="13.0" />
          </font>
+         <tooltip>
+            <Tooltip text="Escribe de 2 a 3 etiquetas, separadas por comas" />
+         </tooltip>
       </TextField>
       <Label layoutX="15.0" layoutY="555.0" text="Fuentes: " AnchorPane.bottomAnchor="76.0">
          <font>

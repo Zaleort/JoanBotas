@@ -16,6 +16,7 @@ import org.openqa.selenium.JavascriptExecutor;
 import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.OutputType;
 import org.openqa.selenium.TakesScreenshot;
+import org.openqa.selenium.TimeoutException;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebDriverException;
 import org.openqa.selenium.WebElement;
@@ -65,22 +66,35 @@ public class DriverHandler {
         }
     }
     
-    public static void writeTitle(WebDriver driver, String title){
+    public static boolean writeTitle(WebDriver driver, String title) throws InterruptedException{
         if (!driver.getCurrentUrl().equals("http://blast.blastingnews.com/news/edit/"))
             driver.get("http://blast.blastingnews.com/news/edit/");
         
         WebElement eTitle = driver.findElement(By.id("news-title"));
         eTitle.sendKeys(title);
+        WebElement eSubTitle = driver.findElement(By.id("news-subtitle"));
+        eSubTitle.click();
+        
+        Thread.sleep(500);
         
         try {
-            WebElement error = driver.findElement(By.id("news-title-error-msg"));
-            if (error.getText().contains("parecido")){
+            WebElement error = driver.findElement(By.id("news-title-error"));
+            if (error.isDisplayed()){
                 System.out.println("Título demasiado parecido");
+                Alert alert = new Alert(AlertType.ERROR);
+                alert.setTitle("Error");
+                alert.setContentText("Título demasiado parecido a uno ya existente");
+                alert.setHeaderText(null);
+                alert.showAndWait();
+                return false;
             }
             
         } catch (NoSuchElementException e){
-            System.out.println("Título correcto");
+            
         }
+        
+        System.out.println("Título correcto");
+        return true;
     }
     
     public static void writeSubtitle (WebDriver driver, String subTitle){
@@ -104,21 +118,21 @@ public class DriverHandler {
     }
     
     public static void addLink(WebDriver driver, String url, String name) throws InterruptedException, IOException{
-        WebElement linkBtn = driver.findElement(By.id("mceu_0"));
-        
-        try {
-            linkBtn.click();
-        } catch (WebDriverException e){
-           JavascriptExecutor jse = (JavascriptExecutor)driver;
-           jse.executeScript("window.scrollBy(0,-250)", "");
-           linkBtn.click();
-        }
-        
         FluentWait<WebDriver> wait = new FluentWait<>(driver)
                 .withTimeout(5, TimeUnit.SECONDS)
                 .pollingEvery(250, TimeUnit.MILLISECONDS)
                 .ignoring(NoSuchElementException.class);
         
+        WebElement linkBtn = wait.until(ExpectedConditions.elementToBeClickable(By.id("mceu_0")));
+        
+        try {
+            linkBtn.click();
+        } catch (WebDriverException e){
+           JavascriptExecutor jse = (JavascriptExecutor)driver;
+           jse.executeScript("window.scrollBy(0,-200)", "");
+           linkBtn.click();
+        }
+
         WebElement urlText = wait.until(new Function<WebDriver, WebElement>() {
             @Override
             public WebElement apply(WebDriver driver){
@@ -137,10 +151,9 @@ public class DriverHandler {
         
         WebElement sendBtn = driver.findElement(By.id("mceu_" + (nId + 4)));
         sendBtn.click();
-        takeScreenshot(driver, "link.png");
     }
     
-    public static void sendNews(WebDriver driver) throws InterruptedException{
+    public static void sendNews(WebDriver driver) {
         WebElement sendBtn = driver.findElement(By.id("button-send"));
         sendBtn.click();
         
@@ -206,32 +219,84 @@ public class DriverHandler {
         return url;
     }
     
-    public static void setPhoto(WebDriver driver) throws InterruptedException, IOException{
+    public static boolean setPhoto(WebDriver driver) throws InterruptedException, IOException{
         WebElement photoBtn = driver.findElement(By.id("upload-photo-default"));
         photoBtn.click();
         
-        FluentWait<WebDriver> wait = new FluentWait<>(driver)
-                .withTimeout(5, TimeUnit.SECONDS)
-                .pollingEvery(250, TimeUnit.MILLISECONDS)
-                .ignoring(NoSuchElementException.class);
-     
-        WebElement photos = wait.until(new Function<WebDriver, WebElement>() {
-            @Override
-            public WebElement apply(WebDriver driver){
-                return driver.findElement(By.className("box-img"));
+        WebDriverWait wait = new WebDriverWait(driver, 5);
+        WebElement photo = null;
+        
+        try{
+            photo = wait.until(ExpectedConditions.elementToBeClickable((By.className("box-img"))));
+            photo.click();
+        } catch (TimeoutException e){
+            System.out.println("No hay imágenes");
+            WebElement close = driver.findElement(By.className("close-search-image"));
+            close.click();
+            WebElement container = driver.findElement(By.id("divGalleryBackground"));
+            wait.until(ExpectedConditions.invisibilityOf(container));
+            return false;
+        }
+        
+        
+        WebElement button = wait.until(ExpectedConditions.elementToBeClickable(By.id("btnDoneAndNext")));
+        button.click();
+        
+        boolean success = true;
+        
+        try{
+            button = driver.findElement(By.id("btnSaveAndClose"));
+            button = wait.until(ExpectedConditions.elementToBeClickable(button));
+            button.click();
+            
+        } catch (TimeoutException | NoSuchElementException nse){
+            System.out.println("Imagen inválida");
+            button = wait.until(ExpectedConditions.elementToBeClickable(By.className("upload-ok")));
+            button.click();
+            boolean pelo = wait.until(ExpectedConditions.invisibilityOfElementLocated(By.className("modal-photo-upload")));
+            photo.click();
+            
+            List<WebElement> photos = driver.findElements(By.className("box-img"));
+            success = trySetPhoto(driver, photos);
+        }
+
+        if (!success) {
+            WebElement close = driver.findElement(By.className("close-search-image"));
+            close.click();
+        }
+        
+        WebElement container = driver.findElement(By.id("divGalleryBackground"));
+        wait.until(ExpectedConditions.invisibilityOf(container));
+        
+        return success;
+    }
+    
+    private static boolean trySetPhoto(WebDriver driver, List<WebElement> photos){
+        WebElement button;
+        WebDriverWait wait = new WebDriverWait(driver, 5);
+        
+        for (int i = 1; i < photos.size(); i++){
+            photos.get(i).click();
+            button = wait.until(ExpectedConditions.elementToBeClickable(By.id("btnDoneAndNext")));
+            button.click();
+            
+            try{
+                button = wait.until(ExpectedConditions.elementToBeClickable(By.id("btnSaveAndClose")));
+                button.click();
+            } catch (TimeoutException e){
+                button = wait.until(ExpectedConditions.elementToBeClickable(By.className("upload-ok")));
+                button.click();
+                boolean pelo = wait.until(ExpectedConditions.invisibilityOfElementLocated(By.className("modal-photo-upload")));
+                photos.get(i).click();
+                
+                continue;
             }
-        });
+            
+            return true;
+        }
         
-        photos.click();
-        Thread.sleep(50);
-        
-        WebElement button = driver.findElement(By.id("btnDoneAndNext"));
-        button.click();
-        
-        button = wait.until(ExpectedConditions.elementToBeClickable(By.id("btnSaveAndClose")));
-        
-        button.click();
-        Thread.sleep(300);
+        System.out.println("No se ha logrado encontrar una imágen válida");
+        return false;
     }
     
     public static void setCategory(WebDriver driver, String categoria){
@@ -270,7 +335,7 @@ public class DriverHandler {
     }
     
     public static void setNoBlasterHelp(WebDriver driver){
-        WebElement slider = driver.findElement(By.className("slider-track"));
+        WebElement slider = driver.findElement(By.className("slider-horizontal"));
         int width=slider.getSize().getWidth();
         Actions move = new Actions(driver);
         move.moveToElement(slider, ((width)/10), 0).click();
@@ -332,7 +397,7 @@ public class DriverHandler {
             WebElement closeBtn = driver.findElement(By.id("welcome-bar-close"));
             closeBtn.click();
         } catch (Exception e){
-            System.out.println("Ya nosta jajaja");
+            System.out.println("Ya no se encuentra el Pop-Up");
         }
     }
 }
