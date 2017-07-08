@@ -20,6 +20,7 @@ import javafx.application.Platform;
 import javafx.concurrent.WorkerStateEvent;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
+import javafx.scene.Cursor;
 import javafx.scene.Node;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Alert.AlertType;
@@ -34,6 +35,7 @@ import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.AnchorPane;
 import javafx.stage.FileChooser;
 import javafx.stage.Modality;
+import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 
 public class ControllerFX implements Initializable {
@@ -62,8 +64,16 @@ public class ControllerFX implements Initializable {
     
     @FXML private TextField tUser;
     @FXML private TextField tPasswd;
+    @FXML private Label lUser;
+    @FXML private Label lPasswd;
+    @FXML private Button login;
     
     @FXML private MenuItem mSalir;
+    
+    // Logout items
+    private Button logout = new Button();
+    @FXML private Label tSesionIniciada;
+    private Label tNombreSesion = new Label();
     
     /**
      * Initializes the controller class.
@@ -104,6 +114,44 @@ public class ControllerFX implements Initializable {
                 event.consume();
             }
         });
+        
+        cargarLogOutItems();
+    }
+    
+    private void cargarLogOutItems(){
+        logout.setText("Cerrar sesión");
+        logout.applyCss();
+        logout.setStyle("-fx-font: 14 System;");
+        logout.layoutXProperty().set(200);
+        logout.layoutYProperty().set(210);
+        logout.cursorProperty().set(Cursor.HAND);
+        logout.setOnAction(new EventHandler<ActionEvent>(){
+            @Override
+            public void handle(ActionEvent e){
+                driver.get("http://blaster.blastingnews.com/services/logout/");
+                setSessionPane(true);
+            }
+        });
+        
+        tNombreSesion.layoutXProperty().set(67);
+        tNombreSesion.layoutYProperty().set(90);
+        tNombreSesion.setStyle("-fx-font: 14 System;");
+        tNombreSesion.setText("¡Bienvenido a Iztapalapa Rifa!");
+    }
+    
+    private void setSessionPane(boolean mode){
+        if (mode){
+            tSesionIniciada.setText("Iniciar sesión");
+            sessionPane.getChildren().removeAll(logout, tNombreSesion);
+            sessionPane.getChildren().addAll(login, tUser, tPasswd, lUser, lPasswd);
+        }
+        
+        else {
+            tSesionIniciada.setText("Sesión iniciada");
+            // TODO: Nombre de sesión plox
+            sessionPane.getChildren().addAll(logout, tNombreSesion);
+            sessionPane.getChildren().removeAll(login, tUser, tPasswd, lUser, lPasswd);
+        }
     }
     
     @FXML private void sendNoticia(ActionEvent event){
@@ -165,24 +213,7 @@ public class ControllerFX implements Initializable {
 
             if (DriverHandler.login(user, passwd, driver)){
                 DriverHandler.closePopUp(driver);
-                
-                sessionPane.getChildren().remove(tPasswd);
-                sessionPane.getChildren().remove(tUser);
-                
-                Button logout = new Button();
-                logout.setText("Cerrar sesión");
-                logout.applyCss();
-                logout.setStyle("-fx-font: 14 System;");
-                logout.layoutXProperty().set(100);
-                logout.layoutYProperty().set(210);
-                logout.setOnAction(new EventHandler<ActionEvent>(){
-                    @Override
-                    public void handle(ActionEvent e){
-                        driver.get("http://blaster.blastingnews.com/services/logout/");
-                    }
-                });
-                
-                sessionPane.getChildren().add(logout);
+                setSessionPane(false);
             }
         }
     }

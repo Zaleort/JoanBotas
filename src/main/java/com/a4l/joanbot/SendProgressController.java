@@ -36,32 +36,33 @@ public class SendProgressController implements Initializable {
     
     public void show(Stage stage){
         try {
-            this.parentStage = stage;
-            
             progressStage = new Stage();
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/sendProgress.fxml"));
             Parent parent = loader.load();
             Scene scene = new Scene(parent);
             
-            progressStage.setOnCloseRequest(new EventHandler<WindowEvent>() {
-                @Override
-                public void handle(WindowEvent e){
-                    bCancelProgress.fireEvent(new ActionEvent());
-                }
-            });
-            
             progressStage.setTitle("Enviando noticia...");
             progressStage.setResizable(false);
             progressStage.initModality(Modality.WINDOW_MODAL);
             progressStage.initStyle(StageStyle.DECORATED);
-            progressStage.initOwner(parentStage);
             progressStage.setScene(scene);
+            progressStage.initOwner(stage);
             progressStage.show();
             
+            progressStage.setOnCloseRequest(new EventHandler<WindowEvent>() {
+                @Override
+                public void handle(WindowEvent e) {
+                    if (send != null){
+                        cancelAction = ControllerFX.send.cancel();
+                        System.out.println(cancelAction);
+                    }
+                }
+            });
+            
         } catch (IOException ex) {
-            System.out.println("Error en Send Progress Window");
             Logger.getLogger(SendProgressController.class.getName()).log(Level.SEVERE, null, ex);
         }
+            
     }
     
     @FXML private void cancelProgress(ActionEvent e){

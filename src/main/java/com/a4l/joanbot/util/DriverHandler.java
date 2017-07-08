@@ -20,7 +20,6 @@ import org.openqa.selenium.TimeoutException;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebDriverException;
 import org.openqa.selenium.WebElement;
-import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.interactions.Actions;
 import org.openqa.selenium.interactions.internal.Coordinates;
 import org.openqa.selenium.internal.Locatable;
@@ -226,6 +225,10 @@ public class DriverHandler {
         WebElement photoBtn = driver.findElement(By.id("upload-photo-default"));
         photoBtn.click();
         
+        WebDriverWait wait = new WebDriverWait(driver, 5);
+        WebElement photo;
+        photo = wait.until(ExpectedConditions.elementToBeClickable((By.className("box-img"))));
+        
         WebElement eSearch = driver.findElement(By.id("input-search"));
         eSearch.clear();
         for (int i = 0; i < etiquetas.length; i++){
@@ -234,12 +237,10 @@ public class DriverHandler {
             else
                 eSearch.sendKeys(etiquetas[i] + " ");
         }
- 
-        eSearch.sendKeys(Keys.RETURN);
-        
-        WebDriverWait wait = new WebDriverWait(driver, 5);
-        WebElement photo;
-        
+
+        WebElement eSearchBtn = driver.findElement(By.id("btnSearchImg"));
+        eSearchBtn.click();
+  
         try{
             photo = wait.until(ExpectedConditions.elementToBeClickable((By.className("box-img"))));
             photo.click();

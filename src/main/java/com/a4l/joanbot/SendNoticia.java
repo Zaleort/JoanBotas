@@ -7,7 +7,6 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import javafx.concurrent.Task;
 import org.openqa.selenium.WebDriver;
-import org.openqa.selenium.WebDriverException;
 
 public class SendNoticia extends Task<Boolean> {
     private final String categoria, titulo, subtitulo, noticia, fuentes;
@@ -91,6 +90,8 @@ public class SendNoticia extends Task<Boolean> {
     
     private void buildNoticia(String noticia, String keyPrimaria, String keySecundaria, String urlP, String urlS) throws InterruptedException, IOException{
         int indexKP, indexKS, index1, index2, lIndex1, lIndex2;
+        int kpLength = keyPrimaria.length();
+        int ksLength = keySecundaria.length();
         boolean orden;
         String builder = noticia.toLowerCase();
         
@@ -109,30 +110,38 @@ public class SendNoticia extends Task<Boolean> {
         if (indexKP < indexKS){
             orden = true;
             index1 = indexKP;
-            lIndex1 = keyPrimaria.length();
+            lIndex1 = kpLength;
             index2 = indexKS;
-            lIndex2 = keySecundaria.length();
+            lIndex2 = ksLength;
         }
         
         else {
             orden = false;
             index1 = indexKS;
-            lIndex1 = keySecundaria.length();
+            lIndex1 = ksLength;
             index2 = indexKP;
-            lIndex2 = keyPrimaria.length();
+            lIndex2 = kpLength;
         }
         
         System.out.println("Index 1: " + indexKP);
         System.out.println("Index 2: " + indexKS);
-        System.out.println("Primaria length: " + keyPrimaria.length());
-        System.out.println("Secundaria length: " + keySecundaria.length());
+        System.out.println("Primaria length: " + kpLength);
+        System.out.println("Secundaria length: " + ksLength);
         
         String subNoticia, subNoticia2, subNoticia3;
         
-        if (Character.isUpperCase(noticia.charAt(indexKP)))
-            keyPrimaria = keyPrimaria.substring(0, 1).toUpperCase() + keyPrimaria.substring(1);
-        if (Character.isUpperCase(noticia.charAt(indexKS)))
-            keySecundaria = keySecundaria.substring(0, 1).toUpperCase() + keySecundaria.substring(1);
+        // Normalización de mayúsculas
+        StringBuilder key = new StringBuilder();
+        for (int i = indexKP; i < indexKP + kpLength; i++){
+            key.append(noticia.charAt(i));
+        }
+        keyPrimaria = key.toString();
+        
+        key = new StringBuilder();
+        for (int i = indexKS; i < indexKS + ksLength; i++){
+            key.append(noticia.charAt(i));
+        }
+        keySecundaria = key.toString();
         
         subNoticia = noticia.substring(0, index1);
         subNoticia2 = noticia.substring(index1 + lIndex1, index2);
