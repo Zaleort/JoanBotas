@@ -135,3 +135,33 @@
     -fx-background-color: #1565C0;
     -fx-text-fill: #eee;
 }
+
+.progress-bar {
+    -fx-indeterminate-bar-length: 200;
+    -fx-indeterminate-bar-flip: false;
+}
+
+.progress-bar > .bar{
+    -fx-background-color:#1976D2;
+    -fx-background-insets: 3 3 4 3;
+    -fx-background-radius: 3;
+    -fx-padding: 0.75em;
+}
+
+.progress-bar:indeterminate > .bar {
+    -fx-background-color: linear-gradient(to left, transparent, #1976D2);
+}
+
+.progress-bar > .track {
+      -fx-background-color: 
+          -fx-shadow-highlight-color,
+          linear-gradient(to bottom, derive(-fx-text-box-border, -10%), -fx-text-box-border),
+          linear-gradient(to bottom, 
+            derive(-fx-control-inner-background, -7%),
+            derive(-fx-control-inner-background, 0%),
+            derive(-fx-control-inner-background, -3%),
+            derive(-fx-control-inner-background, -9%)
+          );
+      
+    -fx-background-radius: 0; /* 10, 9, 8 */
+}

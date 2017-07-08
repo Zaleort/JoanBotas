@@ -2,7 +2,6 @@ package com.a4l.joanbot;
 
 import com.a4l.joanbot.util.DriverHandler;
 import com.a4l.joanbot.util.FileManager;
-import com.a4l.joanbot.util.KeyWordGenerator;
 import com.sun.javafx.scene.control.skin.TextAreaSkin;
 import java.awt.Toolkit;
 import java.io.File;
@@ -15,13 +14,12 @@ import javafx.scene.control.TextField;
 import javafx.fxml.Initializable;
 import javafx.scene.control.Button;
 import javafx.scene.control.ComboBox;
-import java.io.IOException;
 import java.util.Optional;
 import java.util.function.UnaryOperator;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import javafx.application.Platform;
+import javafx.concurrent.WorkerStateEvent;
 import javafx.event.ActionEvent;
+import javafx.event.EventHandler;
 import javafx.scene.Node;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Alert.AlertType;
@@ -37,17 +35,18 @@ import javafx.scene.layout.AnchorPane;
 import javafx.stage.FileChooser;
 import javafx.stage.Modality;
 import org.openqa.selenium.WebDriver;
-import org.openqa.selenium.WebDriverException;
 
 public class ControllerFX implements Initializable {
     private WebDriver driver;
     private File currentFile = null;
+    public static SendNoticia send = null;
     
     public void setDriver(WebDriver driver){
         this.driver = driver;
     }
     
     @FXML private AnchorPane root;
+    @FXML private AnchorPane sessionPane;
     
     @FXML private Button sendBtn;
     @FXML private Button saveBtn;
@@ -105,7 +104,7 @@ public class ControllerFX implements Initializable {
                 event.consume();
             }
         });
-    } 
+    }
     
     @FXML private void sendNoticia(ActionEvent event){
         if(DriverHandler.isLogged(driver)){
@@ -119,52 +118,15 @@ public class ControllerFX implements Initializable {
             etiquetas = getEtiquetas(tEtiquetas.getText());
             
             if (isCorrect(titulo, subtitulo, noticia, etiquetas, fuentes, categoria)){
-                try {
-                    KeyWordGenerator kwg = new KeyWordGenerator(titulo, subtitulo, noticia, etiquetas);
-                    kwg.calcularKeyWord();
+                send = new SendNoticia(categoria, titulo, subtitulo, noticia, etiquetas, fuentes, driver);
+                SendProgressController progress = new SendProgressController();
+                progress.show(MainFX.stage);
+                
+                setSendProgressHandlers(progress);
 
-                    String urlP, urlS;
-                    urlP = DriverHandler.fastSearch(kwg.getKeyPrimaria(), driver);
-                    urlS = DriverHandler.fastSearch(kwg.getKeySecundaria(), driver);
-
-                    driver.get("http://blast.blastingnews.com/news/edit/");
-
-                    DriverHandler.setCategory(driver, categoria);
-                    if (DriverHandler.writeTitle(driver, titulo)){
-                        DriverHandler.writeSubtitle(driver, subtitulo);
-                        boolean isCorrect = DriverHandler.setPhoto(driver);
-                        DriverHandler.setNoBlasterHelp(driver);
-
-                        buildNoticia(noticia, kwg.getKeyPrimaria(), kwg.getKeySecundaria(), urlP, urlS);
-
-                        DriverHandler.setEtiquetas(driver, etiquetas);
-                        DriverHandler.writeFuentes(driver, fuentes);
-                        
-                        if (!isCorrect){
-                            DriverHandler.saveNews(driver);
-                            Alert alert = new Alert(AlertType.ERROR);
-                            alert.setTitle("Error");
-                            alert.setHeaderText(null);
-                            alert.setContentText("Se ha enviado la noticia, pero con errores. Avisa al administrador");
-                            alert.showAndWait();
-                        }
-                        
-                        else {
-                            DriverHandler.sendNews(driver);
-                            Alert alert = new Alert(AlertType.INFORMATION);
-                            alert.setTitle("Éxito");
-                            alert.setHeaderText(null);
-                            alert.setContentText("Noticia enviada con éxito");
-                            alert.showAndWait();
-                        }
-                    }
-
-                } catch (InterruptedException | IOException ex) {
-                    Logger.getLogger(MainFX.class.getName()).log(Level.SEVERE, null, ex);
-                } catch (WebDriverException e){
-                    System.out.println(e.getMessage());
-                    System.out.println("Algo ha salido mal...");
-                }
+                Thread th = new Thread(send);
+                th.setDaemon(true);
+                th.start();
             }
             
             else {
@@ -201,14 +163,28 @@ public class ControllerFX implements Initializable {
             String user = tUser.getText();
             String passwd = tPasswd.getText();
 
-            DriverHandler.login(user, passwd, driver);
-            DriverHandler.closePopUp(driver);
+            if (DriverHandler.login(user, passwd, driver)){
+                DriverHandler.closePopUp(driver);
+                
+                sessionPane.getChildren().remove(tPasswd);
+                sessionPane.getChildren().remove(tUser);
+                
+                Button logout = new Button();
+                logout.setText("Cerrar sesión");
+                logout.applyCss();
+                logout.setStyle("-fx-font: 14 System;");
+                logout.layoutXProperty().set(100);
+                logout.layoutYProperty().set(210);
+                logout.setOnAction(new EventHandler<ActionEvent>(){
+                    @Override
+                    public void handle(ActionEvent e){
+                        driver.get("http://blaster.blastingnews.com/services/logout/");
+                    }
+                });
+                
+                sessionPane.getChildren().add(logout);
+            }
         }
-    }
-    
-    // TODO: LogOut
-    private void logOut(){
-        driver.get("http://blaster.blastingnews.com/services/logout/");
     }
     
     @FXML private void newNoticia(ActionEvent e){
@@ -335,70 +311,46 @@ public class ControllerFX implements Initializable {
         }
     }
     
-    private void buildNoticia(String noticia, String keyPrimaria, String keySecundaria, String urlP, String urlS) throws InterruptedException, IOException{
-        int indexKP, indexKS, index1, index2, lIndex1, lIndex2;
-        boolean orden;
-        String builder = noticia.toLowerCase();
-        
-        indexKP = builder.indexOf(keyPrimaria + " ");
-        if (indexKP == -1)
-            indexKP = builder.indexOf(keyPrimaria + ".");
-        if (indexKP == -1)
-            indexKP = builder.indexOf(keyPrimaria);
-        
-        indexKS = builder.indexOf(keySecundaria + " ");
-        if (indexKS == -1)
-            indexKS = builder.indexOf(keySecundaria + ".");
-        if (indexKS == -1)
-            indexKS = builder.indexOf(keySecundaria);
-        
-        if (indexKP < indexKS){
-            orden = true;
-            index1 = indexKP;
-            lIndex1 = keyPrimaria.length();
-            index2 = indexKS;
-            lIndex2 = keySecundaria.length();
-        }
-        
-        else {
-            orden = false;
-            index1 = indexKS;
-            lIndex1 = keySecundaria.length();
-            index2 = indexKP;
-            lIndex2 = keyPrimaria.length();
-        }
-        
-        System.out.println("Index 1: " + indexKP);
-        System.out.println("Index 2: " + indexKS);
-        System.out.println("Primaria length: " + keyPrimaria.length());
-        System.out.println("Secundaria length: " + keySecundaria.length());
-        
-        String subNoticia, subNoticia2, subNoticia3;
-        
-        if (Character.isUpperCase(noticia.charAt(indexKP)))
-            keyPrimaria = keyPrimaria.substring(0, 1).toUpperCase() + keyPrimaria.substring(1);
-        if (Character.isUpperCase(noticia.charAt(indexKS)))
-            keySecundaria = keySecundaria.substring(0, 1).toUpperCase() + keySecundaria.substring(1);
-        
-        subNoticia = noticia.substring(0, index1);
-        subNoticia2 = noticia.substring(index1 + lIndex1, index2);
-        subNoticia3 = noticia.substring(index2 + lIndex2);
+    private void setSendProgressHandlers(SendProgressController progress){
+        send.setOnSucceeded(new EventHandler<WorkerStateEvent>() {
+            @Override
+            public void handle(WorkerStateEvent t) {
+                if (send.getValue()) {
+                    Alert alert = new Alert(AlertType.INFORMATION);
+                    alert.setTitle("Éxito");
+                    alert.setHeaderText(null);
+                    alert.setContentText("Noticia enviada con éxito");
+                    alert.showAndWait();
+                } else {
+                    Alert alert = new Alert(AlertType.ERROR);
+                    alert.setTitle("Error");
+                    alert.setHeaderText(null);
+                    alert.setContentText("Se ha enviado la noticia, pero con errores. Avisa al administrador");
+                    alert.showAndWait();
+                }
 
-        if (orden){
-            DriverHandler.writeNews(driver, subNoticia);
-            DriverHandler.addLink(driver, urlP, keyPrimaria);
-            DriverHandler.writeNews(driver, subNoticia2);
-            DriverHandler.addLink(driver, urlS, keySecundaria);
-            DriverHandler.writeNews(driver, subNoticia3);
-        }
-        
-        else {
-            DriverHandler.writeNews(driver, subNoticia);
-            DriverHandler.addLink(driver, urlS, keySecundaria);
-            DriverHandler.writeNews(driver, subNoticia2);
-            DriverHandler.addLink(driver, urlP, keyPrimaria);
-            DriverHandler.writeNews(driver, subNoticia3);
-        }
+                progress.progressStage.close();
+            }
+        });
+
+        send.setOnCancelled(new EventHandler<WorkerStateEvent>() {
+            @Override
+            public void handle(WorkerStateEvent t) {
+                progress.progressStage.close();
+            }
+        });
+
+        send.setOnFailed(new EventHandler<WorkerStateEvent>() {
+            @Override
+            public void handle(WorkerStateEvent t) {
+                Alert alert = new Alert(AlertType.ERROR);
+                alert.setTitle("Error");
+                alert.setHeaderText(null);
+                alert.setContentText("Ha ocurrido un error");
+                alert.showAndWait();
+                progress.progressStage.close();
+            }
+        });
     }
     
     private UnaryOperator<Change> maxLength(int len){

@@ -25,11 +25,11 @@ import org.openqa.selenium.WebDriver;
  */
 public class MainFX extends Application {
     public static WebDriver driver;
-    private Stage stage;
+    public static Stage stage;
     
     @Override
     public void start(Stage primaryStage) throws Exception {
-        this.stage = primaryStage;
+        stage = primaryStage;
         primaryStage.setOnCloseRequest(confirmCloseEventHandler);
         FXMLLoader loader = new FXMLLoader(getClass().getResource("/mainFXML.fxml"));
         Parent root = loader.load();

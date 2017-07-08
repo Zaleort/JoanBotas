@@ -44,12 +44,14 @@ public class KeyWordGenerator {
     }
     
     public void calcularKeyWord(){
-        for (int i = 0; i < etiquetas.length; i++){
-            etiquetas[i] = etiquetas[i].toLowerCase();
+        String[] tEtiquetas = etiquetas;
+        
+        for (int i = 0; i < tEtiquetas.length; i++){
+            tEtiquetas[i] = tEtiquetas[i].toLowerCase();
         }
         
         String tNoticia = noticia.toLowerCase();
-        for (String str : etiquetas){
+        for (String str : tEtiquetas){
             if (tNoticia.contains(str)){
                 if (keyPrimaria.isEmpty())
                     keyPrimaria = str;

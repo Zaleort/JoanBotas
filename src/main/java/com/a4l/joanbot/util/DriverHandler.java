@@ -20,6 +20,7 @@ import org.openqa.selenium.TimeoutException;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebDriverException;
 import org.openqa.selenium.WebElement;
+import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.interactions.Actions;
 import org.openqa.selenium.interactions.internal.Coordinates;
 import org.openqa.selenium.internal.Locatable;
@@ -28,7 +29,7 @@ import org.openqa.selenium.support.ui.FluentWait;
 import org.openqa.selenium.support.ui.WebDriverWait;
 
 public class DriverHandler {
-    public static void login(String user, String passwd, WebDriver driver) throws InterruptedException{
+    public static boolean login(String user, String passwd, WebDriver driver) throws InterruptedException{
         if (!driver.getCurrentUrl().equals("http://blaster.blastingnews.com/"))
             driver.get("http://blaster.blastingnews.com/");
 
@@ -54,15 +55,17 @@ public class DriverHandler {
             alert.setContentText("Sesión iniciada correctamente");
 
             alert.showAndWait();
+            return true;
         }
         
         else {
             Alert alert = new Alert(AlertType.ERROR);
             alert.setTitle("Error");
             alert.setHeaderText(null);
-            alert.setContentText("Error al iniciar sesión. Comrpueba tu usuario y contraseña");
+            alert.setContentText("Error al iniciar sesión. Comprueba tu usuario y contraseña");
 
             alert.showAndWait();
+            return false;
         }
     }
     
@@ -219,12 +222,23 @@ public class DriverHandler {
         return url;
     }
     
-    public static boolean setPhoto(WebDriver driver) throws InterruptedException, IOException{
+    public static boolean setPhoto(WebDriver driver, String[] etiquetas) throws InterruptedException, IOException{
         WebElement photoBtn = driver.findElement(By.id("upload-photo-default"));
         photoBtn.click();
         
+        WebElement eSearch = driver.findElement(By.id("input-search"));
+        eSearch.clear();
+        for (int i = 0; i < etiquetas.length; i++){
+            if ((i+1 >= etiquetas.length))
+                eSearch.sendKeys(etiquetas[i]);
+            else
+                eSearch.sendKeys(etiquetas[i] + " ");
+        }
+ 
+        eSearch.sendKeys(Keys.RETURN);
+        
         WebDriverWait wait = new WebDriverWait(driver, 5);
-        WebElement photo = null;
+        WebElement photo;
         
         try{
             photo = wait.until(ExpectedConditions.elementToBeClickable((By.className("box-img"))));
@@ -369,15 +383,15 @@ public class DriverHandler {
         return true;
     }
     
-    public static boolean isLogged(WebDriver driver){
+    public static boolean isLogged(WebDriver driver) {
         if (!driver.getCurrentUrl().contains("blastingnews"))
-            driver.get("http://blaster.blastingnews.com/");
-        
-        try {
-            WebElement logged = driver.findElement(By.id("logged"));
-        } catch (NoSuchElementException e){
-            return false;
-        }
+                driver.get("http://blaster.blastingnews.com/");
+
+            try {
+                WebElement logged = driver.findElement(By.id("logged"));
+            } catch (NoSuchElementException e){
+                return false;
+            }
         
         return true;
     }

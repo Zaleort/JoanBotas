@@ -126,7 +126,7 @@
             <Font size="18.0" />
          </font>
       </Button>
-      <AnchorPane layoutX="738.0" prefHeight="650.0" prefWidth="315.0" AnchorPane.bottomAnchor="0.0" AnchorPane.rightAnchor="-3.0" AnchorPane.topAnchor="0.0">
+      <AnchorPane fx:id="sessionPane" layoutX="738.0" prefHeight="650.0" prefWidth="315.0" AnchorPane.bottomAnchor="0.0" AnchorPane.rightAnchor="-3.0" AnchorPane.topAnchor="0.0">
          <children>
             <Label layoutX="96.0" layoutY="63.0" text="Inicio de sesión" AnchorPane.topAnchor="63.0">
                <font>
@@ -153,7 +153,7 @@
                   <Font size="13.0" />
                </font>
             </PasswordField>
-            <Button id="loginBtn" fx:id="loginBtn" layoutX="191.0" layoutY="207.0" mnemonicParsing="false" onAction="#logIn" prefHeight="25.0" prefWidth="110.0" text="Iniciar sesión" textFill="#eeeeee" AnchorPane.topAnchor="207.0">
+            <Button id="loginBtn" fx:id="loginBtn" layoutX="190.0" layoutY="210.0" mnemonicParsing="false" onAction="#logIn" prefHeight="25.0" prefWidth="110.0" text="Iniciar sesión" textFill="#eeeeee" AnchorPane.topAnchor="210.0">
                <font>
                   <Font size="14.0" />
                </font>
