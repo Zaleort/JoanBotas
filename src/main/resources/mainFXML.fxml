@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
+<?import javafx.scene.Cursor?>
 <?import javafx.scene.control.Button?>
 <?import javafx.scene.control.ComboBox?>
 <?import javafx.scene.control.Label?>
@@ -120,15 +121,21 @@
          <font>
             <Font size="18.0" />
          </font>
+         <cursor>
+            <Cursor fx:constant="HAND" />
+         </cursor>
       </Button>
       <Button id="sendBtn" fx:id="sendBtn" layoutX="379.0" layoutY="597.0" mnemonicParsing="false" onAction="#sendNoticia" prefHeight="40.0" prefWidth="335.0" text="Enviar noticia" textAlignment="CENTER" textFill="#eeeeee" AnchorPane.bottomAnchor="13.0">
          <font>
             <Font size="18.0" />
          </font>
+         <cursor>
+            <Cursor fx:constant="HAND" />
+         </cursor>
       </Button>
-      <AnchorPane layoutX="738.0" prefHeight="650.0" prefWidth="315.0" AnchorPane.bottomAnchor="0.0" AnchorPane.rightAnchor="-3.0" AnchorPane.topAnchor="0.0">
+      <AnchorPane fx:id="sessionPane" layoutX="738.0" prefHeight="650.0" prefWidth="315.0" AnchorPane.bottomAnchor="0.0" AnchorPane.rightAnchor="-3.0" AnchorPane.topAnchor="0.0">
          <children>
-            <Label layoutX="96.0" layoutY="63.0" text="Inicio de sesión" AnchorPane.topAnchor="63.0">
+            <Label fx:id="tSesionIniciada" layoutX="96.0" layoutY="60.0" text="Inicio de sesión" AnchorPane.topAnchor="60.0">
                <font>
                   <Font size="18.0" />
                </font>
@@ -153,16 +160,19 @@
                   <Font size="13.0" />
                </font>
             </PasswordField>
-            <Button id="loginBtn" fx:id="loginBtn" layoutX="191.0" layoutY="207.0" mnemonicParsing="false" onAction="#logIn" prefHeight="25.0" prefWidth="110.0" text="Iniciar sesión" textFill="#eeeeee" AnchorPane.topAnchor="207.0">
+            <Button id="loginBtn" fx:id="login" layoutX="190.0" layoutY="210.0" mnemonicParsing="false" onAction="#logIn" prefHeight="25.0" prefWidth="110.0" text="Iniciar sesión" textFill="#eeeeee" AnchorPane.topAnchor="210.0">
                <font>
                   <Font size="14.0" />
                </font>
+               <cursor>
+                  <Cursor fx:constant="HAND" />
+               </cursor>
             </Button>
          </children>
       </AnchorPane>
       <Separator layoutX="732.0" layoutY="29.0" orientation="VERTICAL" prefHeight="618.0" prefWidth="6.0" AnchorPane.bottomAnchor="5.0" AnchorPane.topAnchor="30.0" />
-      <Label fx:id="tNoticiaCount" layoutX="128.0" layoutY="202.0" opacity="0.0" text="Has escrito: 14 caracteres" textFill="#d32f2f" />
-      <Label fx:id="tSubtituloCount" layoutX="75.0" layoutY="147.0" opacity="0.0" text="Has escrito: 14 caracteres" textFill="#d32f2f" />
-      <Label fx:id="tTituloCount" layoutX="61.0" layoutY="92.0" opacity="0.0" text="Has escrito: 14 caracteres" textFill="#d32f2f" />
+      <Label fx:id="tNoticiaCount" layoutX="129.0" layoutY="200.0" opacity="0.0" text="Has escrito: 14 caracteres" textFill="#d32f2f" />
+      <Label fx:id="tSubtituloCount" layoutX="76.0" layoutY="145.0" opacity="0.0" text="Has escrito: 14 caracteres" textFill="#d32f2f" />
+      <Label fx:id="tTituloCount" layoutX="61.0" layoutY="90.0" opacity="0.0" text="Has escrito: 14 caracteres" textFill="#777777" />
    </children>
 </AnchorPane>
