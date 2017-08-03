@@ -19,7 +19,6 @@ import java.util.function.UnaryOperator;
 import javafx.application.Platform;
 import javafx.concurrent.WorkerStateEvent;
 import javafx.event.ActionEvent;
-import javafx.event.EventHandler;
 import javafx.scene.Cursor;
 import javafx.scene.Node;
 import javafx.scene.control.Alert;
@@ -35,7 +34,6 @@ import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.AnchorPane;
 import javafx.stage.FileChooser;
 import javafx.stage.Modality;
-import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 
 public class ControllerFX implements Initializable {
@@ -71,9 +69,9 @@ public class ControllerFX implements Initializable {
     @FXML private MenuItem mSalir;
     
     // Logout items
-    private Button logout = new Button();
+    private final Button logout = new Button();
     @FXML private Label tSesionIniciada;
-    private Label tNombreSesion = new Label();
+    private final Label tNombreSesion = new Label();
     
     /**
      * Initializes the controller class.
@@ -90,7 +88,6 @@ public class ControllerFX implements Initializable {
         categorias.getItems().addAll(options);
         categorias.getSelectionModel().selectFirst();
         tNoticia.setWrapText(true);
-        tNoticiaCount.setOpacity(0);
         tTitulo.setTextFormatter(new TextFormatter(maxLength(80)));
         tSubtitulo.setTextFormatter(new TextFormatter(maxLength(150)));
         
@@ -125,12 +122,18 @@ public class ControllerFX implements Initializable {
         logout.layoutXProperty().set(200);
         logout.layoutYProperty().set(210);
         logout.cursorProperty().set(Cursor.HAND);
-        logout.setOnAction(new EventHandler<ActionEvent>(){
-            @Override
-            public void handle(ActionEvent e){
-                driver.get("http://blaster.blastingnews.com/services/logout/");
-                setSessionPane(true);
+        logout.setOnAction((ActionEvent e) -> {
+            if (DriverHandler.isClosed(driver)){
+            driver = DriverHandler.launchDriver();
+            Alert alert = new Alert(AlertType.WARNING);
+                alert.setTitle("Cierre inesperado de ChromeDriver");
+                alert.setHeaderText(null);
+                alert.setContentText("ChromeDriver se había cerrado de forma inesperada");
+                alert.showAndWait();
             }
+            
+            driver.get("http://blaster.blastingnews.com/services/logout/");
+            setSessionPane(true);
         });
         
         tNombreSesion.layoutXProperty().set(67);
@@ -141,20 +144,35 @@ public class ControllerFX implements Initializable {
     
     private void setSessionPane(boolean mode){
         if (mode){
-            tSesionIniciada.setText("Iniciar sesión");
-            sessionPane.getChildren().removeAll(logout, tNombreSesion);
-            sessionPane.getChildren().addAll(login, tUser, tPasswd, lUser, lPasswd);
+            if (sessionPane.getChildren().contains(logout)){
+                tSesionIniciada.setText("Iniciar sesión");
+                sessionPane.getChildren().removeAll(logout, tNombreSesion);
+                sessionPane.getChildren().addAll(login, tUser, tPasswd, lUser, lPasswd);
+            }
         }
         
         else {
-            tSesionIniciada.setText("Sesión iniciada");
-            // TODO: Nombre de sesión plox
-            sessionPane.getChildren().addAll(logout, tNombreSesion);
-            sessionPane.getChildren().removeAll(login, tUser, tPasswd, lUser, lPasswd);
+            if (sessionPane.getChildren().contains(login)){
+                tSesionIniciada.setText("Sesión iniciada");
+                // TODO: Nombre de sesión plox
+                sessionPane.getChildren().addAll(logout, tNombreSesion);
+                sessionPane.getChildren().removeAll(login, tUser, tPasswd, lUser, lPasswd);
+            }
         }
     }
     
     @FXML private void sendNoticia(ActionEvent event){
+        if (DriverHandler.isClosed(driver)){
+            driver = DriverHandler.launchDriver();
+            Alert alert = new Alert(AlertType.WARNING);
+                alert.setTitle("Cierre inesperado de ChromeDriver");
+                alert.setHeaderText(null);
+                alert.setContentText("ChromeDriver se había cerrado, por favor vuelva a iniciar sesión");
+                alert.showAndWait();
+            setSessionPane(true);
+            return;
+        }
+
         if(DriverHandler.isLogged(driver)){
             String categoria, titulo, subtitulo, noticia, fuentes;
             String[] etiquetas;
@@ -164,19 +182,19 @@ public class ControllerFX implements Initializable {
             noticia = tNoticia.getText();
             fuentes = tFuentes.getText();
             etiquetas = getEtiquetas(tEtiquetas.getText());
-            
+
             if (isCorrect(titulo, subtitulo, noticia, etiquetas, fuentes, categoria)){
                 send = new SendNoticia(categoria, titulo, subtitulo, noticia, etiquetas, fuentes, driver);
                 SendProgressController progress = new SendProgressController();
                 progress.show(MainFX.stage);
-                
+
                 setSendProgressHandlers(progress);
 
                 Thread th = new Thread(send);
                 th.setDaemon(true);
                 th.start();
             }
-            
+
             else {
                 Alert alert = new Alert(AlertType.ERROR);
                 alert.setTitle("Error");
@@ -186,7 +204,7 @@ public class ControllerFX implements Initializable {
                 alert.showAndWait();
             }
         }
-        
+
         else {
             Alert alert = new Alert(AlertType.ERROR);
             alert.setTitle("Error");
@@ -198,6 +216,15 @@ public class ControllerFX implements Initializable {
     }
     
     @FXML private void logIn(ActionEvent e) throws InterruptedException{
+        if (DriverHandler.isClosed(driver)){
+            driver = DriverHandler.launchDriver();
+            Alert alert = new Alert(AlertType.WARNING);
+                alert.setTitle("Cierre inesperado de ChromeDriver");
+                alert.setHeaderText(null);
+                alert.setContentText("ChromeDriver se había cerrado de forma inesperada");
+                alert.showAndWait();
+        }
+        
         if (DriverHandler.isLogged(driver)){
             Alert alert = new Alert(AlertType.WARNING);
             alert.setTitle("Error");
@@ -343,44 +370,66 @@ public class ControllerFX implements Initializable {
     }
     
     private void setSendProgressHandlers(SendProgressController progress){
-        send.setOnSucceeded(new EventHandler<WorkerStateEvent>() {
-            @Override
-            public void handle(WorkerStateEvent t) {
-                if (send.getValue()) {
+        send.setOnSucceeded((WorkerStateEvent t) -> {
+            int exitCode = send.getValue();
+            switch (exitCode) {
+                //Éxito
+                case 0:{
                     Alert alert = new Alert(AlertType.INFORMATION);
                     alert.setTitle("Éxito");
                     alert.setHeaderText(null);
                     alert.setContentText("Noticia enviada con éxito");
                     alert.showAndWait();
-                } else {
-                    Alert alert = new Alert(AlertType.ERROR);
-                    alert.setTitle("Error");
+                    break;
+                }
+                
+                // No se encuentra una imagen u otro error, pero la noticia se puede enviar
+                case 1:{
+                    Alert alert = new Alert(AlertType.WARNING);
+                    alert.setTitle("Ha ocurrido un error");
                     alert.setHeaderText(null);
                     alert.setContentText("Se ha enviado la noticia, pero con errores. Avisa al administrador");
                     alert.showAndWait();
+                    break;
                 }
-
-                progress.progressStage.close();
+                
+                // Título parecido
+                case 2:{
+                    Alert alert = new Alert(AlertType.ERROR);
+                    alert.setTitle("Revise el título");
+                    alert.setHeaderText(null);
+                    alert.setContentText("El título es demasiado parecido a uno ya existente");
+                    alert.showAndWait();
+                    break;
+                }
+                
+                // Excepción WebDriver
+                case -1:{
+                    Alert alert = new Alert(AlertType.ERROR);
+                    alert.setTitle("ChromeDriver Error");
+                    alert.setHeaderText(null);
+                    alert.setContentText("Ha ocurrido un error");
+                    alert.showAndWait();
+                    break;
+                }
+                default:
+                    break;
             }
+            
+            progress.progressStage.close();
         });
 
-        send.setOnCancelled(new EventHandler<WorkerStateEvent>() {
-            @Override
-            public void handle(WorkerStateEvent t) {
-                progress.progressStage.close();
-            }
+        send.setOnCancelled((WorkerStateEvent t) -> {
+            progress.progressStage.close();
         });
 
-        send.setOnFailed(new EventHandler<WorkerStateEvent>() {
-            @Override
-            public void handle(WorkerStateEvent t) {
-                Alert alert = new Alert(AlertType.ERROR);
-                alert.setTitle("Error");
-                alert.setHeaderText(null);
-                alert.setContentText("Ha ocurrido un error");
-                alert.showAndWait();
-                progress.progressStage.close();
-            }
+        send.setOnFailed((WorkerStateEvent t) -> {
+            Alert alert = new Alert(AlertType.ERROR);
+            alert.setTitle("Error desconocido");
+            alert.setHeaderText(null);
+            alert.setContentText("Ha ocurrido un error");
+            alert.showAndWait();
+            progress.progressStage.close();
         });
     }
     
@@ -422,19 +471,33 @@ public class ControllerFX implements Initializable {
     private void showUiCount (TextField text, Label count, int min){
         text.textProperty().addListener((observable, oldValue, newValue) -> {
             int caracteres = countStringLength(newValue, true);
-            if (caracteres == 0 || caracteres >= min){ 
+            if (caracteres == 0){ 
                 if (count.getOpacity() != 0)
                     count.setOpacity(0);
             }
             else if (caracteres == 1){
                 if (count.getOpacity() != 1)
                     count.setOpacity(1);
+                if (!count.getStyle().equals("-fx-text-fill: #d32f2f;"))
+                    count.setStyle("-fx-text-fill: #d32f2f;");
                 
                 count.setText("Has escrito " + caracteres + " carácter");
+                
             }
             else if (caracteres < min){
                 if (count.getOpacity() != 1)
                     count.setOpacity(1);
+                if (!count.getStyle().equals("-fx-text-fill: #d32f2f;"))
+                    count.setStyle("-fx-text-fill: #d32f2f;");
+                
+                count.setText("Has escrito " + caracteres + " caracteres");
+            }
+            
+            else if (caracteres >= min){
+                if (count.getOpacity() != 1)
+                    count.setOpacity(1);
+                if (!count.getStyle().equals("-fx-text-fill: #777;"))
+                    count.setStyle("-fx-text-fill: #777;");
                 
                 count.setText("Has escrito " + caracteres + " caracteres");
             }
@@ -444,19 +507,33 @@ public class ControllerFX implements Initializable {
     private void showUiCount (TextArea text, Label count, int min){
         text.textProperty().addListener((observable, oldValue, newValue) -> {
             int caracteres = countStringLength(newValue, false);
-            if (caracteres == 0 || caracteres >= min){ 
+            if (caracteres == 0){ 
                 if (count.getOpacity() != 0)
                     count.setOpacity(0);
             }
             else if (caracteres == 1){
                 if (count.getOpacity() != 1)
                     count.setOpacity(1);
+                if (!count.getStyle().equals("-fx-text-fill: #d32f2f;"))
+                    count.setStyle("-fx-text-fill: #d32f2f;");
                 
                 count.setText("Has escrito " + caracteres + " carácter");
+                
             }
             else if (caracteres < min){
                 if (count.getOpacity() != 1)
                     count.setOpacity(1);
+                if (!count.getStyle().equals("-fx-text-fill: #d32f2f;"))
+                    count.setStyle("-fx-text-fill: #d32f2f;");
+                
+                count.setText("Has escrito " + caracteres + " caracteres");
+            }
+            
+            else if (caracteres >= min){
+                if (count.getOpacity() != 1)
+                    count.setOpacity(1);
+                if (!count.getStyle().equals("-fx-text-fill: #777;"))
+                    count.setStyle("-fx-text-fill: #777;");
                 
                 count.setText("Has escrito " + caracteres + " caracteres");
             }

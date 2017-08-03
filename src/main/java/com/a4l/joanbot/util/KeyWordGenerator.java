@@ -6,6 +6,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -53,13 +54,17 @@ public class KeyWordGenerator {
         String tNoticia = noticia.toLowerCase();
         for (String str : tEtiquetas){
             if (tNoticia.contains(str)){
-                if (keyPrimaria.isEmpty())
+                if (keyPrimaria.isEmpty()){
                     keyPrimaria = str;
+                }
 
                 else if (keySecundaria.isEmpty()){
                     keySecundaria = str;
                     break;
                 }
+                
+                String[] aStr = str.split(" ");
+                ignoradas.addAll(Arrays.asList(aStr));
             } 
         }
         

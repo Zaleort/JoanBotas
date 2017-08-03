@@ -2,17 +2,17 @@ package com.a4l.joanbot;
 
 import com.a4l.joanbot.util.DriverHandler;
 import com.a4l.joanbot.util.KeyWordGenerator;
-import java.io.IOException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javafx.concurrent.Task;
 import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.WebDriverException;
 
-public class SendNoticia extends Task<Boolean> {
+public class SendNoticia extends Task<Integer> {
     private final String categoria, titulo, subtitulo, noticia, fuentes;
     private final String[] etiquetas;
     
-    private final WebDriver driver;
+    private WebDriver driver;
     
     public SendNoticia(String categoria, String titulo, String subtitulo, String noticia, String[] etiquetas, String fuentes, 
             WebDriver driver){
@@ -26,7 +26,7 @@ public class SendNoticia extends Task<Boolean> {
     }
     
     @Override
-    public Boolean call(){
+    public Integer call(){
         try {  
             KeyWordGenerator kwg = new KeyWordGenerator(titulo, subtitulo, noticia, etiquetas);
             kwg.calcularKeyWord();
@@ -35,7 +35,7 @@ public class SendNoticia extends Task<Boolean> {
             urlP = DriverHandler.fastSearch(kwg.getKeyPrimaria(), driver);
             
             if (this.isCancelled()){
-                return true;
+                return 0;
             }
             
             urlS = DriverHandler.fastSearch(kwg.getKeySecundaria(), driver);
@@ -43,7 +43,7 @@ public class SendNoticia extends Task<Boolean> {
             driver.get("http://blast.blastingnews.com/news/edit/");
             
             if (this.isCancelled()){
-                return true;
+                return 0;
             }
 
             DriverHandler.setCategory(driver, categoria); 
@@ -52,20 +52,20 @@ public class SendNoticia extends Task<Boolean> {
                 DriverHandler.writeSubtitle(driver, subtitulo);
                 
                 if (this.isCancelled()){
-                    return true;
+                    return 0;
                 }
                 
                 boolean isCorrect = DriverHandler.setPhoto(driver, etiquetas);
                 DriverHandler.setNoBlasterHelp(driver);
                 
                 if (this.isCancelled()){
-                    return true;
+                    return 0;
                 }
                 
                 buildNoticia(noticia, kwg.getKeyPrimaria(), kwg.getKeySecundaria(), urlP, urlS);
                 
                 if (this.isCancelled()){
-                    return true;
+                    return 0;
                 }
 
                 DriverHandler.setEtiquetas(driver, etiquetas);
@@ -73,22 +73,29 @@ public class SendNoticia extends Task<Boolean> {
 
                 if (!isCorrect){
                     DriverHandler.saveNews(driver);
-                    return false;
+                    return 1;
                 }
 
                 else {
+                    DriverHandler.saveNews(driver);
                     DriverHandler.sendNews(driver);
                 }
             }
+            
+            else return 2;
 
-        } catch (InterruptedException | IOException ex) {
+        } catch (InterruptedException ex) {
             Logger.getLogger(MainFX.class.getName()).log(Level.SEVERE, null, ex);
+ 
+        } catch (WebDriverException we){
+            Logger.getLogger(MainFX.class.getName()).log(Level.SEVERE, null, we);
+            return -1;
         }
        
-       return true;
+       return 0;
     }
     
-    private void buildNoticia(String noticia, String keyPrimaria, String keySecundaria, String urlP, String urlS) throws InterruptedException, IOException{
+    private void buildNoticia(String noticia, String keyPrimaria, String keySecundaria, String urlP, String urlS) {
         int indexKP, indexKS, index1, index2, lIndex1, lIndex2;
         int kpLength = keyPrimaria.length();
         int ksLength = keySecundaria.length();
@@ -148,7 +155,7 @@ public class SendNoticia extends Task<Boolean> {
         subNoticia3 = noticia.substring(index2 + lIndex2);
 
         if (orden){
-            DriverHandler.writeNews(driver, subNoticia);
+            DriverHandler.writeNews(driver, subNoticia);       
             DriverHandler.addLink(driver, urlP, keyPrimaria);
             DriverHandler.writeNews(driver, subNoticia2);
             DriverHandler.addLink(driver, urlS, keySecundaria);

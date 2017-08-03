@@ -1,8 +1,3 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package com.a4l.joanbot;
 
 import java.util.Optional;
@@ -19,10 +14,6 @@ import javafx.stage.Stage;
 import javafx.stage.WindowEvent;
 import org.openqa.selenium.WebDriver;
 
-/**
- *
- * @author Henrique
- */
 public class MainFX extends Application {
     public static WebDriver driver;
     public static Stage stage;

@@ -171,8 +171,8 @@
          </children>
       </AnchorPane>
       <Separator layoutX="732.0" layoutY="29.0" orientation="VERTICAL" prefHeight="618.0" prefWidth="6.0" AnchorPane.bottomAnchor="5.0" AnchorPane.topAnchor="30.0" />
-      <Label fx:id="tNoticiaCount" layoutX="128.0" layoutY="202.0" opacity="0.0" text="Has escrito: 14 caracteres" textFill="#d32f2f" />
-      <Label fx:id="tSubtituloCount" layoutX="75.0" layoutY="147.0" opacity="0.0" text="Has escrito: 14 caracteres" textFill="#d32f2f" />
-      <Label fx:id="tTituloCount" layoutX="61.0" layoutY="92.0" opacity="0.0" text="Has escrito: 14 caracteres" textFill="#d32f2f" />
+      <Label fx:id="tNoticiaCount" layoutX="129.0" layoutY="200.0" opacity="0.0" text="Has escrito: 14 caracteres" textFill="#d32f2f" />
+      <Label fx:id="tSubtituloCount" layoutX="76.0" layoutY="145.0" opacity="0.0" text="Has escrito: 14 caracteres" textFill="#d32f2f" />
+      <Label fx:id="tTituloCount" layoutX="61.0" layoutY="90.0" opacity="0.0" text="Has escrito: 14 caracteres" textFill="#777777" />
    </children>
 </AnchorPane>

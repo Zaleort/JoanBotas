@@ -6,7 +6,6 @@ import java.util.ResourceBundle;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javafx.event.ActionEvent;
-import javafx.event.EventHandler;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
@@ -49,13 +48,10 @@ public class SendProgressController implements Initializable {
             progressStage.initOwner(stage);
             progressStage.show();
             
-            progressStage.setOnCloseRequest(new EventHandler<WindowEvent>() {
-                @Override
-                public void handle(WindowEvent e) {
-                    if (send != null){
-                        cancelAction = ControllerFX.send.cancel();
-                        System.out.println(cancelAction);
-                    }
+            progressStage.setOnCloseRequest((WindowEvent e) -> {
+                if (send != null){
+                    cancelAction = ControllerFX.send.cancel();
+                    System.out.println(cancelAction);
                 }
             });
             
@@ -70,7 +66,6 @@ public class SendProgressController implements Initializable {
             cancelAction = ControllerFX.send.cancel();
             System.out.println(cancelAction);
         }
-        
     }
     
     public boolean getCancelAction(){
