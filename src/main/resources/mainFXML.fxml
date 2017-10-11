@@ -10,14 +10,14 @@
 <?import javafx.scene.control.PasswordField?>
 <?import javafx.scene.control.Separator?>
 <?import javafx.scene.control.SeparatorMenuItem?>
-<?import javafx.scene.control.TextArea?>
 <?import javafx.scene.control.TextField?>
 <?import javafx.scene.control.Tooltip?>
 <?import javafx.scene.input.KeyCodeCombination?>
 <?import javafx.scene.layout.AnchorPane?>
 <?import javafx.scene.text.Font?>
+<?import javafx.scene.web.HTMLEditor?>
 
-<AnchorPane id="mainFXClass" fx:id="root" minHeight="350.0" minWidth="850.0" prefHeight="650.0" prefWidth="1050.0" stylesheets="@fxml.css" xmlns="http://javafx.com/javafx/8.0.111" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.a4l.joanbot.ControllerFX">
+<AnchorPane id="mainFXClass" fx:id="root" minHeight="350.0" minWidth="850.0" prefHeight="650.0" prefWidth="1050.0" stylesheets="@fxml.css" xmlns="http://javafx.com/javafx/8.0.141" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.a4l.joanbot.ControllerFX">
    <children>
       <MenuBar layoutY="2.0" maxWidth="1.7976931348623157E308" prefHeight="25.0" prefWidth="1050.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
         <menus>
@@ -51,20 +51,6 @@
                   </MenuItem>
             </items>
           </Menu>
-          <Menu styleClass="menu" text="_Editar">
-            <items>
-              <MenuItem mnemonicParsing="false" text="Deshacer">
-                     <accelerator>
-                        <KeyCodeCombination alt="UP" code="Z" control="DOWN" meta="UP" shift="UP" shortcut="UP" />
-                     </accelerator>
-                  </MenuItem>
-                  <MenuItem mnemonicParsing="false" text="Rehacer">
-                     <accelerator>
-                        <KeyCodeCombination alt="UP" code="Y" control="DOWN" meta="UP" shift="UP" shortcut="UP" />
-                     </accelerator>
-                  </MenuItem>
-            </items>
-          </Menu>
         </menus>
       </MenuBar>
       <Label layoutX="15.0" layoutY="35.0" text="Categoría" AnchorPane.leftAnchor="14.0">
@@ -72,14 +58,14 @@
             <Font size="13.0" />
          </font></Label>
       <ComboBox fx:id="categorias" layoutX="15.0" layoutY="55.0" prefHeight="25.0" prefWidth="189.0" promptText="Selecciona una categoría" style="-fx-border-radius: none; -fx-background-color: #eee;" AnchorPane.leftAnchor="14.0" />
-      <TextField fx:id="tTitulo" layoutX="15.0" layoutY="110.0" onAction="#sendNoticia" prefHeight="25.0" prefWidth="700.0" promptText="Escribe el titular de la noticia, entre 30 y 80 caracteres" styleClass="textField">
-         <font>
-            <Font size="13.0" />
-         </font></TextField>
       <Label layoutX="15.0" layoutY="90.0" text="Titular" AnchorPane.leftAnchor="14.0">
          <font>
             <Font size="13.0" />
          </font></Label>
+      <TextField fx:id="tTitulo" layoutX="15.0" layoutY="110.0" onAction="#sendNoticia" prefHeight="25.0" prefWidth="700.0" promptText="Escribe el titular de la noticia, entre 30 y 80 caracteres" styleClass="textField" AnchorPane.leftAnchor="15.0">
+         <font>
+            <Font size="13.0" />
+         </font></TextField>
       <Label layoutX="15.0" layoutY="145.0" text="Subtítulo" wrapText="true" AnchorPane.leftAnchor="14.0">
          <font>
             <Font size="13.0" />
@@ -91,11 +77,11 @@
       <Label layoutX="15.0" layoutY="200.0" text="Texto de la noticia" AnchorPane.leftAnchor="14.0">
          <font>
             <Font size="13.0" />
-         </font></Label>
-      <TextArea fx:id="tNoticia" layoutX="15.0" layoutY="220.0" prefHeight="285.0" prefWidth="700.0" promptText="Introduzca aquí el texto de la noticia, con un mínimo de 2000 caracteres" styleClass="textField" AnchorPane.bottomAnchor="146.0" AnchorPane.leftAnchor="15.0" AnchorPane.topAnchor="220.0">
-         <font>
-            <Font size="13.0" />
-         </font></TextArea>
+         </font>
+         <tooltip>
+            <Tooltip text="Introduzca el texto de la noticia, con un mínimo de 2000 caracteres" />
+         </tooltip></Label>
+      <HTMLEditor fx:id="tNoticia" htmlText="&lt;html&gt;&lt;head&gt;&lt;meta http-equiv=&quot;Content-Type&quot; content=&quot;text/html; charset=UTF-8&quot;&gt;&lt;link type=&quot;text/css&quot; rel=&quot;stylesheet&quot; href=&quot;http://blast.blastingnews.com/js/bo/thirdpart/tinymce/skins/lightgray/content.min.css&quot;&gt;&lt;link type=&quot;text/css&quot; rel=&quot;stylesheet&quot; href=&quot;http://blast.blastingnews.com/css/bo/blasting-edit-news.css?v=12.120.336.0f492163ce8e9954dc7574b086a10327&quot;&gt;&lt;/head&gt;&lt;body id=&quot;tinymce&quot; class=&quot;mce-content-body &quot; data-id=&quot;news-body&quot; contenteditable=&quot;true&quot; style=&quot;background-color: #fcfcfc;&quot;&gt;&lt;/body&gt;&lt;/html&gt;" layoutX="15.0" layoutY="225.0" onKeyPressed="#onHtmlKey" onKeyReleased="#onHtmlKeyRelease" prefHeight="297.0" prefWidth="700.0" />
       <Label layoutX="15.0" layoutY="530.0" text="Etiquetas:">
          <font>
             <Font size="13.0" />
@@ -117,7 +103,7 @@
          <font>
             <Font size="13.0" />
          </font></TextField>
-      <Button id="saveBtn" fx:id="saveBtn" layoutX="15.0" layoutY="597.0" mnemonicParsing="false" onAction="#saveNoticia" prefHeight="40.0" prefWidth="335.0" text="Guardar" textFill="#333333" AnchorPane.bottomAnchor="13.0">
+      <Button id="saveBtn" fx:id="saveBtn" layoutX="15.0" layoutY="597.0" mnemonicParsing="false" onAction="#saveNoticia" prefHeight="40.0" prefWidth="225.0" text="Guardar" textFill="#333333" AnchorPane.bottomAnchor="13.0">
          <font>
             <Font size="18.0" />
          </font>
@@ -125,7 +111,15 @@
             <Cursor fx:constant="HAND" />
          </cursor>
       </Button>
-      <Button id="sendBtn" fx:id="sendBtn" layoutX="379.0" layoutY="597.0" mnemonicParsing="false" onAction="#sendNoticia" prefHeight="40.0" prefWidth="335.0" text="Enviar noticia" textAlignment="CENTER" textFill="#eeeeee" AnchorPane.bottomAnchor="13.0">
+      <Button id="sendBtn" fx:id="sendBtn" layoutX="253.0" layoutY="597.0" mnemonicParsing="false" onAction="#sendNoticia" prefHeight="40.0" prefWidth="225.0" text="Enviar noticia" textAlignment="CENTER" textFill="#eeeeee" AnchorPane.bottomAnchor="13.0">
+         <font>
+            <Font size="18.0" />
+         </font>
+         <cursor>
+            <Cursor fx:constant="HAND" />
+         </cursor>
+      </Button>
+      <Button id="publishBtn" fx:id="publishBtn" layoutX="490.0" layoutY="597.0" mnemonicParsing="false" onAction="#publishNoticia" prefHeight="40.0" prefWidth="225.0" text="Enviar y publicar" textAlignment="CENTER" textFill="#eeeeee" AnchorPane.bottomAnchor="13.0">
          <font>
             <Font size="18.0" />
          </font>
@@ -145,7 +139,7 @@
                   <Font size="13.0" />
                </font>
             </Label>
-            <TextField fx:id="tUser" layoutX="10.0" layoutY="110.0" onAction="#logIn" prefHeight="25.0" prefWidth="290.0" promptText="E-mail" styleClass="textField" text="59234aa881f93@mailbox92.biz" AnchorPane.topAnchor="110.0">
+            <TextField fx:id="tUser" layoutX="10.0" layoutY="110.0" onAction="#logIn" prefHeight="25.0" prefWidth="290.0" promptText="E-mail" styleClass="textField" AnchorPane.topAnchor="110.0">
                <font>
                   <Font size="13.0" />
                </font>
@@ -155,7 +149,7 @@
                   <Font size="13.0" />
                </font>
             </Label>
-            <PasswordField fx:id="tPasswd" layoutX="10.0" layoutY="164.0" onAction="#logIn" prefHeight="25.0" prefWidth="290.0" promptText="Contraseña" styleClass="textField" text="Vamohacalmarno123" AnchorPane.topAnchor="164.0">
+            <PasswordField fx:id="tPasswd" layoutX="10.0" layoutY="164.0" onAction="#logIn" prefHeight="25.0" prefWidth="290.0" promptText="Contraseña" styleClass="textField" AnchorPane.topAnchor="164.0">
                <font>
                   <Font size="13.0" />
                </font>

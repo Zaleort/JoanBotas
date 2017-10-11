@@ -78,7 +78,7 @@ public class FileManager {
         } catch (FileNotFoundException ex) {
             System.err.println(Arrays.toString(ex.getStackTrace()));
         } catch (IOException ex) {
-            System.err.println(Arrays.toString(ex.getStackTrace()));
+            Logger.getLogger(FileManager.class.getName()).log(Level.SEVERE, null, ex);
         } finally {
             try {
                 if (miFlujoEntrada != null)

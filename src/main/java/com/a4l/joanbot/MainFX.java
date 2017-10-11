@@ -9,6 +9,7 @@ import javafx.scene.Scene;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.ButtonType;
+import javafx.scene.image.Image;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.stage.WindowEvent;
@@ -29,7 +30,8 @@ public class MainFX extends Application {
         
         Scene scene = new Scene(root);
         
-        primaryStage.setTitle("Iztapalapa Rifa");
+        primaryStage.setTitle("News Sender - Dev SNAPSHOT");
+        primaryStage.getIcons().add(new Image("/JoanBotIcon.png"));
         primaryStage.setResizable(false);
         primaryStage.setScene(scene);
         primaryStage.show();

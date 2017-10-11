@@ -5,7 +5,6 @@ import com.a4l.joanbot.MainFX;
 import com.google.common.base.Function;
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import javafx.scene.control.Alert;
@@ -13,6 +12,7 @@ import javafx.scene.control.Alert.AlertType;
 import org.apache.commons.io.FileUtils;
 import org.openqa.selenium.Keys;
 import org.openqa.selenium.By;
+import org.openqa.selenium.ElementNotVisibleException;
 import org.openqa.selenium.JavascriptExecutor;
 import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.OutputType;
@@ -25,8 +25,7 @@ import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.chrome.ChromeOptions;
 import org.openqa.selenium.interactions.Actions;
 import org.openqa.selenium.interactions.internal.Coordinates;
-import org.openqa.selenium.internal.Locatable;
-import org.openqa.selenium.remote.DesiredCapabilities;
+import org.openqa.selenium.interactions.internal.Locatable;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.FluentWait;
 import org.openqa.selenium.support.ui.WebDriverWait;
@@ -36,11 +35,10 @@ public class DriverHandler {
         if (!driver.getCurrentUrl().equals("http://blaster.blastingnews.com/"))
             driver.get("http://blaster.blastingnews.com/");
 
-        WebElement userForm, passwdForm, loginBtn;
+        WebElement userForm, passwdForm;
 
         userForm = driver.findElement(By.id("edtInputLogin"));
         passwdForm = driver.findElement(By.id("edtInputPassword"));
-        loginBtn = driver.findElement(By.id("btnLogin"));
 
         userForm.clear();
         passwdForm.clear();
@@ -48,6 +46,8 @@ public class DriverHandler {
         ((JavascriptExecutor)driver).executeScript("arguments[0].value = arguments[1];", userForm, user);
         ((JavascriptExecutor)driver).executeScript("arguments[0].value = arguments[1];", passwdForm, passwd);
 
+        WebElement loginBtn;
+        loginBtn = driver.findElement(By.id("btnLogin"));
         loginBtn.click();
         
         WebDriverWait wait = new WebDriverWait(driver, 10);
@@ -111,9 +111,10 @@ public class DriverHandler {
     
     public static void writeNews(WebDriver driver, String news){
         WebElement iframe = driver.findElement(By.id("news-body_ifr"));
-        iframe.sendKeys(Keys.RETURN);
-        iframe.sendKeys(Keys.BACK_SPACE);
-        iframe.sendKeys(news);
+        //driver.switchTo().frame(iframe);
+        iframe.click();
+        ((JavascriptExecutor) driver).executeScript("arguments[0].contentWindow.document.write(arguments[1])", iframe, news);
+        //((JavascriptExecutor)driver).executeScript("arguments[0].value = arguments[1];", iframe, news);
     }
     
     public static void writeFuentes(WebDriver driver, String fuentes){
@@ -181,7 +182,7 @@ public class DriverHandler {
             wait.until(ExpectedConditions.invisibilityOfElementLocated(By.className("modal-dialog")));
         } catch (Exception e){
             System.out.println("Tiempo de espera agotado para el envío de noticias");
-        } 
+        }
     }
     
     public static void saveNews(WebDriver driver){
@@ -189,42 +190,27 @@ public class DriverHandler {
         saveBtn.click();
     }
     
-    public static String search(String search, WebDriver driver) throws InterruptedException{
-        String url = driver.getCurrentUrl();
-        
-        if (!url.startsWith("http://es.blastingnews.com/"))
-            driver.get("http://es.blastingnews.com/");
-        
-        WebElement searchBox, searchBtn;
-        searchBox = driver.findElement(By.id("search"));
-        searchBtn = driver.findElement(By.className("search-button"));     
-        
-        searchBox.sendKeys(search); 
-        searchBox.sendKeys(" Queso");
-        searchBtn.click();
-        
-        //Thread.sleep(2500);
-        
-        WebElement noticia = driver.findElement(By.className("search-item-title"));
-        noticia.click();
-
-        ArrayList<String> tabs2 = new ArrayList<>(driver.getWindowHandles());
-        driver.switchTo().window(tabs2.get(1));
-        
-        //Thread.sleep(250);
-        
-        url = driver.getCurrentUrl();
-        driver.close();
-        
-        driver.switchTo().window(tabs2.get(0));
-        return url;
-    }
-    
-    public static String fastSearch(String search, WebDriver driver){
+    public static String search(String search, WebDriver driver){
         driver.get("http://es.blastingnews.com/search?q=" + search);
         
         try{
             WebElement noticia = driver.findElement(By.className("search-item-link"));
+            return noticia.getAttribute("href");   
+        } catch (NoSuchElementException e){
+            System.out.println("No se ha encontrado ninguna noticia");
+            return null;
+        }
+    }
+    
+    public static String searchGetSecond(String search, WebDriver driver){
+        driver.get("http://es.blastingnews.com/search?q=" + search);
+        
+        try{
+            WebElement noticias = driver.findElement(By.id("search-results-list"));
+            List<WebElement> listNoticias = noticias.findElements(By.tagName("div"));
+            
+            WebElement noticia = listNoticias.get(1);
+            noticia.findElement(By.className("search-item-link"));
             return noticia.getAttribute("href");   
         } catch (NoSuchElementException e){
             System.out.println("No se ha encontrado ninguna noticia");
@@ -321,7 +307,13 @@ public class DriverHandler {
     
     private static void setKeyPhotos(String[] etiquetas, WebDriver driver){
         WebDriverWait wait = new WebDriverWait(driver, 5);
-        wait.until(ExpectedConditions.elementToBeClickable((By.className("box-img"))));
+        try {
+            wait.until(ExpectedConditions.elementToBeClickable((By.className("box-img"))));
+        } catch (TimeoutException | NoSuchElementException e){
+            // El título no encuntra imagen y salta excepción
+            System.out.println("Desafortunadamente no hemos encontrado la mejor imagen para ti");
+        }
+        
         WebElement eSearch = driver.findElement(By.id("input-search"));
         eSearch.clear();
         for (int i = 0; i < etiquetas.length; i++){
@@ -359,7 +351,7 @@ public class DriverHandler {
         }
     }
     
-    public static void setEtiquetas(WebDriver driver, String[] etiquetas) throws InterruptedException {
+    public static boolean setEtiquetas(WebDriver driver, String[] etiquetas) throws InterruptedException {
         WebElement etiqueta = driver.findElement(By.id("input-dei-tag"));
         etiqueta.click();
         
@@ -368,13 +360,22 @@ public class DriverHandler {
         for (String str : etiquetas) {
             etiqueta = wait.until(ExpectedConditions.elementToBeClickable(etiqueta));
             
-            if (str.length() < 4)
-                Thread.sleep(200);
+            Thread.sleep(150);
             
             etiqueta.click();
             etiqueta.sendKeys(str);
             etiqueta.sendKeys(Keys.RETURN);
+            
+            try {
+                WebElement blackList = driver.findElement(By.id("news-tag-error-blacklist"));
+                blackList.click();
+                return false;
+            } catch (NoSuchElementException | ElementNotVisibleException e){
+                
+            }
         }
+        
+        return true;
     }
     
     public static void setNoBlasterHelp(WebDriver driver){
@@ -424,6 +425,7 @@ public class DriverHandler {
         try {
             driver.getCurrentUrl();
         } catch (Exception e){
+            driver.quit();
             return true;
         }
         
@@ -435,12 +437,11 @@ public class DriverHandler {
             "webdriver.chrome.driver", 
             "chromedriver.exe");
 
-        DesiredCapabilities capabilities = DesiredCapabilities.chrome();
         ChromeOptions options = new ChromeOptions();
-        options.addArguments("headless");
+        options.setHeadless(true);
+        options.addArguments("window-size=1024,768");
         options.addArguments("disable-gpu");
-        capabilities.setCapability(ChromeOptions.CAPABILITY, options);
-        WebDriver driver = MainFX.driver = new ChromeDriver(capabilities);
+        WebDriver driver = MainFX.driver = new ChromeDriver(options);
         
         return driver;
     }

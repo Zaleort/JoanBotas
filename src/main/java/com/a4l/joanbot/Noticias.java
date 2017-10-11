@@ -61,4 +61,19 @@ public class Noticias implements Serializable {
     public void setFuentes(String fuentes) {
         this.fuentes = fuentes;
     }
+    
+    public static String curateHTML(String noticia){
+        String curatedNoticia;
+        
+        curatedNoticia = noticia;
+        curatedNoticia = curatedNoticia.replaceAll("<div>", "<p>");
+        curatedNoticia = curatedNoticia.replaceAll("</div>", "</p>");
+        curatedNoticia = curatedNoticia.replaceAll("<b>", "<strong>");
+        curatedNoticia = curatedNoticia.replaceAll("</b>", "</strong>");
+        curatedNoticia = curatedNoticia.replaceAll("<i>", "<em>");
+        curatedNoticia = curatedNoticia.replaceAll("</i>", "</em>");
+        curatedNoticia = curatedNoticia.replaceAll("(<\\/?font)[\\s\\S]*?(>)", "");
+        
+        return curatedNoticia;
+    }
 }

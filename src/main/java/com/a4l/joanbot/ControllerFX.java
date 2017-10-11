@@ -2,36 +2,35 @@ package com.a4l.joanbot;
 
 import com.a4l.joanbot.util.DriverHandler;
 import com.a4l.joanbot.util.FileManager;
-import com.sun.javafx.scene.control.skin.TextAreaSkin;
+import com.a4l.joanbot.util.HTMLUtil;
+import com.sun.javafx.scene.web.skin.HTMLEditorSkin;
 import java.awt.Toolkit;
 import java.io.File;
 import java.net.URL;
-import java.util.ResourceBundle;
-import javafx.collections.FXCollections;
-import javafx.collections.ObservableList;
-import javafx.fxml.FXML;
-import javafx.scene.control.TextField;
-import javafx.fxml.Initializable;
-import javafx.scene.control.Button;
-import javafx.scene.control.ComboBox;
 import java.util.Optional;
+import java.util.ResourceBundle;
 import java.util.function.UnaryOperator;
 import javafx.application.Platform;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
 import javafx.concurrent.WorkerStateEvent;
 import javafx.event.ActionEvent;
+import javafx.fxml.FXML;
+import javafx.fxml.Initializable;
 import javafx.scene.Cursor;
 import javafx.scene.Node;
 import javafx.scene.control.Alert;
-import javafx.scene.control.Alert.AlertType;
+import javafx.scene.control.Button;
 import javafx.scene.control.ButtonType;
+import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.MenuItem;
-import javafx.scene.control.TextArea;
+import javafx.scene.control.TextField;
 import javafx.scene.control.TextFormatter;
-import javafx.scene.control.TextFormatter.Change;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.AnchorPane;
+import javafx.scene.web.HTMLEditor;
 import javafx.stage.FileChooser;
 import javafx.stage.Modality;
 import org.openqa.selenium.WebDriver;
@@ -55,7 +54,7 @@ public class ControllerFX implements Initializable {
     @FXML private TextField tSubtitulo;
     @FXML private TextField tFuentes;
     @FXML private TextField tEtiquetas;
-    @FXML private TextArea tNoticia;
+    @FXML private HTMLEditor tNoticia;
     @FXML private Label tNoticiaCount;
     @FXML private Label tTituloCount;
     @FXML private Label tSubtituloCount;
@@ -76,8 +75,9 @@ public class ControllerFX implements Initializable {
     /**
      * Initializes the controller class.
      * @param url
-     * @param rb
+     * @param rb 
      */
+     
     @Override
     public void initialize(URL url, ResourceBundle rb) {
         ObservableList<String> options = FXCollections.observableArrayList();
@@ -87,7 +87,6 @@ public class ControllerFX implements Initializable {
         
         categorias.getItems().addAll(options);
         categorias.getSelectionModel().selectFirst();
-        tNoticia.setWrapText(true);
         tTitulo.setTextFormatter(new TextFormatter(maxLength(80)));
         tSubtitulo.setTextFormatter(new TextFormatter(maxLength(150)));
         
@@ -99,8 +98,8 @@ public class ControllerFX implements Initializable {
         tNoticia.addEventFilter(KeyEvent.KEY_PRESSED, (KeyEvent event) -> {
             if (event.getCode().equals(KeyCode.TAB)) {
                 Node node = (Node) event.getSource();
-                if (node instanceof TextArea) {
-                    TextAreaSkin skin = (TextAreaSkin) ((TextArea)node).getSkin();
+                if (node instanceof HTMLEditor) {
+                    HTMLEditorSkin skin = (HTMLEditorSkin) ((HTMLEditor)node).getSkin();
                     if (event.isShiftDown()) {
                         skin.getBehavior().traversePrevious();
                     }
@@ -112,6 +111,7 @@ public class ControllerFX implements Initializable {
             }
         });
         
+        cargarHTMLEditor();
         cargarLogOutItems();
     }
     
@@ -125,7 +125,7 @@ public class ControllerFX implements Initializable {
         logout.setOnAction((ActionEvent e) -> {
             if (DriverHandler.isClosed(driver)){
             driver = DriverHandler.launchDriver();
-            Alert alert = new Alert(AlertType.WARNING);
+            Alert alert = new Alert(Alert.AlertType.WARNING);
                 alert.setTitle("Cierre inesperado de ChromeDriver");
                 alert.setHeaderText(null);
                 alert.setContentText("ChromeDriver se había cerrado de forma inesperada");
@@ -136,10 +136,10 @@ public class ControllerFX implements Initializable {
             setSessionPane(true);
         });
         
-        tNombreSesion.layoutXProperty().set(67);
+        tNombreSesion.layoutXProperty().set(85);
         tNombreSesion.layoutYProperty().set(90);
         tNombreSesion.setStyle("-fx-font: 14 System;");
-        tNombreSesion.setText("¡Bienvenido a Iztapalapa Rifa!");
+        tNombreSesion.setText("¡Bienvenido de nuevo!");
     }
     
     private void setSessionPane(boolean mode){
@@ -161,10 +161,18 @@ public class ControllerFX implements Initializable {
         }
     }
     
-    @FXML private void sendNoticia(ActionEvent event){
+    private void cargarHTMLEditor(){
+        tNoticia.lookup(".top-toolbar").setManaged(false);
+        tNoticia.lookup(".top-toolbar").setVisible(false);
+        
+        tNoticia.setHtmlText(HTMLUtil.defaultHtml);
+    }
+    
+    // Verdadero publica, Falso guarda
+    private void sendNoticia(boolean publish){
         if (DriverHandler.isClosed(driver)){
             driver = DriverHandler.launchDriver();
-            Alert alert = new Alert(AlertType.WARNING);
+            Alert alert = new Alert(Alert.AlertType.WARNING);
                 alert.setTitle("Cierre inesperado de ChromeDriver");
                 alert.setHeaderText(null);
                 alert.setContentText("ChromeDriver se había cerrado, por favor vuelva a iniciar sesión");
@@ -179,12 +187,12 @@ public class ControllerFX implements Initializable {
             categoria = (String)categorias.getValue();
             titulo = tTitulo.getText();
             subtitulo = tSubtitulo.getText();
-            noticia = tNoticia.getText();
+            noticia = tNoticia.getHtmlText();
             fuentes = tFuentes.getText();
             etiquetas = getEtiquetas(tEtiquetas.getText());
 
             if (isCorrect(titulo, subtitulo, noticia, etiquetas, fuentes, categoria)){
-                send = new SendNoticia(categoria, titulo, subtitulo, noticia, etiquetas, fuentes, driver);
+                send = new SendNoticia(categoria, titulo, subtitulo, noticia, etiquetas, fuentes, driver, publish);
                 SendProgressController progress = new SendProgressController();
                 progress.show(MainFX.stage);
 
@@ -196,7 +204,7 @@ public class ControllerFX implements Initializable {
             }
 
             else {
-                Alert alert = new Alert(AlertType.ERROR);
+                Alert alert = new Alert(Alert.AlertType.ERROR);
                 alert.setTitle("Error");
                 alert.setHeaderText(null);
                 alert.setContentText("Rellena correctamente todos los campos");
@@ -206,7 +214,7 @@ public class ControllerFX implements Initializable {
         }
 
         else {
-            Alert alert = new Alert(AlertType.ERROR);
+            Alert alert = new Alert(Alert.AlertType.ERROR);
             alert.setTitle("Error");
             alert.setHeaderText(null);
             alert.setContentText("Debes iniciar sesión primero");
@@ -215,10 +223,20 @@ public class ControllerFX implements Initializable {
         }
     }
     
+    // Botón "Enviar Noticia"
+    @FXML private void sendNoticia(ActionEvent event){
+        sendNoticia(false);
+    }
+    
+    // Botón "Enviar y publicar"
+    @FXML private void publishNoticia(ActionEvent event){
+        sendNoticia(true);
+    }
+    
     @FXML private void logIn(ActionEvent e) throws InterruptedException{
         if (DriverHandler.isClosed(driver)){
             driver = DriverHandler.launchDriver();
-            Alert alert = new Alert(AlertType.WARNING);
+            Alert alert = new Alert(Alert.AlertType.WARNING);
                 alert.setTitle("Cierre inesperado de ChromeDriver");
                 alert.setHeaderText(null);
                 alert.setContentText("ChromeDriver se había cerrado de forma inesperada");
@@ -226,7 +244,7 @@ public class ControllerFX implements Initializable {
         }
         
         if (DriverHandler.isLogged(driver)){
-            Alert alert = new Alert(AlertType.WARNING);
+            Alert alert = new Alert(Alert.AlertType.WARNING);
             alert.setTitle("Error");
             alert.setHeaderText(null);
             alert.setContentText("Ya has iniciado sesión");
@@ -247,7 +265,7 @@ public class ControllerFX implements Initializable {
     
     @FXML private void newNoticia(ActionEvent e){
         if (currentFile != null){
-            Alert alert = new Alert(AlertType.CONFIRMATION, "¿Deseas guardar antes de abrir una nueva noticia?");
+            Alert alert = new Alert(Alert.AlertType.CONFIRMATION, "¿Deseas guardar antes de abrir una nueva noticia?");
             Button exitButton = (Button) alert.getDialogPane().lookupButton(
                     ButtonType.OK
             );
@@ -265,7 +283,8 @@ public class ControllerFX implements Initializable {
         categorias.getSelectionModel().selectFirst();
         tTitulo.clear();
         tSubtitulo.clear();
-        tNoticia.clear();
+        
+        tNoticia.setHtmlText(HTMLUtil.defaultHtml);
         tEtiquetas.clear();
         tFuentes.clear();
         
@@ -276,7 +295,7 @@ public class ControllerFX implements Initializable {
         categoria = (String)categorias.getValue();
         titulo = tTitulo.getText();
         subtitulo = tSubtitulo.getText();
-        noticia = tNoticia.getText();
+        noticia = tNoticia.getHtmlText();
         fuentes = tFuentes.getText();
         etiquetas = tEtiquetas.getText();
         
@@ -315,7 +334,7 @@ public class ControllerFX implements Initializable {
             categoria = (String)categorias.getValue();
             titulo = tTitulo.getText();
             subtitulo = tSubtitulo.getText();
-            noticia = tNoticia.getText();
+            noticia = tNoticia.getHtmlText();
             fuentes = tFuentes.getText();
             etiquetas = tEtiquetas.getText();
         
@@ -338,7 +357,7 @@ public class ControllerFX implements Initializable {
 
             tTitulo.setText(noticia.getTitulo());
             tSubtitulo.setText(noticia.getSubtitulo());
-            tNoticia.setText(noticia.getNoticia());
+            tNoticia.setHtmlText(noticia.getNoticia());
             tEtiquetas.setText(noticia.getEtiquetas());
             tFuentes.setText(noticia.getFuentes());
 
@@ -375,7 +394,7 @@ public class ControllerFX implements Initializable {
             switch (exitCode) {
                 //Éxito
                 case 0:{
-                    Alert alert = new Alert(AlertType.INFORMATION);
+                    Alert alert = new Alert(Alert.AlertType.INFORMATION);
                     alert.setTitle("Éxito");
                     alert.setHeaderText(null);
                     alert.setContentText("Noticia enviada con éxito");
@@ -385,7 +404,7 @@ public class ControllerFX implements Initializable {
                 
                 // No se encuentra una imagen u otro error, pero la noticia se puede enviar
                 case 1:{
-                    Alert alert = new Alert(AlertType.WARNING);
+                    Alert alert = new Alert(Alert.AlertType.WARNING);
                     alert.setTitle("Ha ocurrido un error");
                     alert.setHeaderText(null);
                     alert.setContentText("Se ha enviado la noticia, pero con errores. Avisa al administrador");
@@ -395,7 +414,7 @@ public class ControllerFX implements Initializable {
                 
                 // Título parecido
                 case 2:{
-                    Alert alert = new Alert(AlertType.ERROR);
+                    Alert alert = new Alert(Alert.AlertType.ERROR);
                     alert.setTitle("Revise el título");
                     alert.setHeaderText(null);
                     alert.setContentText("El título es demasiado parecido a uno ya existente");
@@ -403,9 +422,19 @@ public class ControllerFX implements Initializable {
                     break;
                 }
                 
+                // Etiqueta no permitida
+                case 3: {
+                    Alert alert = new Alert(Alert.AlertType.ERROR);
+                    alert.setTitle("Etiqueta no permitida");
+                    alert.setHeaderText(null);
+                    alert.setContentText("Una de las etiquetas elegidas no están permitidas, por favor elija otra");
+                    alert.showAndWait();
+                    break;
+                }
+                
                 // Excepción WebDriver
                 case -1:{
-                    Alert alert = new Alert(AlertType.ERROR);
+                    Alert alert = new Alert(Alert.AlertType.ERROR);
                     alert.setTitle("ChromeDriver Error");
                     alert.setHeaderText(null);
                     alert.setContentText("Ha ocurrido un error");
@@ -424,7 +453,7 @@ public class ControllerFX implements Initializable {
         });
 
         send.setOnFailed((WorkerStateEvent t) -> {
-            Alert alert = new Alert(AlertType.ERROR);
+            Alert alert = new Alert(Alert.AlertType.ERROR);
             alert.setTitle("Error desconocido");
             alert.setHeaderText(null);
             alert.setContentText("Ha ocurrido un error");
@@ -433,8 +462,8 @@ public class ControllerFX implements Initializable {
         });
     }
     
-    private UnaryOperator<Change> maxLength(int len){
-        UnaryOperator<Change> rejectChange = c -> {
+    private UnaryOperator<TextFormatter.Change> maxLength(int len){
+        UnaryOperator<TextFormatter.Change> rejectChange = c -> {
             // check if the change might effect the validating predicate
             if (c.isContentChange()) {
                 // check if change is valid
@@ -457,7 +486,8 @@ public class ControllerFX implements Initializable {
     // de la cadena
     private int countStringLength(String str, boolean space){
         if (!space){
-            String res = str.replaceAll("\\s", "");
+            String res = HTMLUtil.deleteHTML(str);
+            res = res.replaceAll("\\s", "");
             return res.length();
         }
         
@@ -504,40 +534,46 @@ public class ControllerFX implements Initializable {
         });
     }
     
-    private void showUiCount (TextArea text, Label count, int min){
-        text.textProperty().addListener((observable, oldValue, newValue) -> {
-            int caracteres = countStringLength(newValue, false);
-            if (caracteres == 0){ 
-                if (count.getOpacity() != 0)
-                    count.setOpacity(0);
-            }
-            else if (caracteres == 1){
-                if (count.getOpacity() != 1)
-                    count.setOpacity(1);
-                if (!count.getStyle().equals("-fx-text-fill: #d32f2f;"))
-                    count.setStyle("-fx-text-fill: #d32f2f;");
-                
-                count.setText("Has escrito " + caracteres + " carácter");
-                
-            }
-            else if (caracteres < min){
-                if (count.getOpacity() != 1)
-                    count.setOpacity(1);
-                if (!count.getStyle().equals("-fx-text-fill: #d32f2f;"))
-                    count.setStyle("-fx-text-fill: #d32f2f;");
-                
-                count.setText("Has escrito " + caracteres + " caracteres");
-            }
-            
-            else if (caracteres >= min){
-                if (count.getOpacity() != 1)
-                    count.setOpacity(1);
-                if (!count.getStyle().equals("-fx-text-fill: #777;"))
-                    count.setStyle("-fx-text-fill: #777;");
-                
-                count.setText("Has escrito " + caracteres + " caracteres");
-            }
-        });
+    private void showUiCount (HTMLEditor html, Label count, int min){
+        int caracteres = countStringLength(html.getHtmlText(), false);
+        if (caracteres == 0){ 
+            if (count.getOpacity() != 0)
+                count.setOpacity(0);
+        }
+        else if (caracteres == 1){
+            if (count.getOpacity() != 1)
+                count.setOpacity(1);
+            if (!count.getStyle().equals("-fx-text-fill: #d32f2f;"))
+                count.setStyle("-fx-text-fill: #d32f2f;");
+
+            count.setText("Has escrito " + caracteres + " carácter");
+
+        }
+        else if (caracteres < min){
+            if (count.getOpacity() != 1)
+                count.setOpacity(1);
+            if (!count.getStyle().equals("-fx-text-fill: #d32f2f;"))
+                count.setStyle("-fx-text-fill: #d32f2f;");
+
+            count.setText("Has escrito " + caracteres + " caracteres");
+        }
+
+        else if (caracteres >= min){
+            if (count.getOpacity() != 1)
+                count.setOpacity(1);
+            if (!count.getStyle().equals("-fx-text-fill: #777;"))
+                count.setStyle("-fx-text-fill: #777;");
+
+            count.setText("Has escrito " + caracteres + " caracteres");
+        }
+    }
+    
+    @FXML private void onHtmlKey(KeyEvent e){
+        showUiCount(tNoticia, tNoticiaCount, 2000);
+    }
+    
+    @FXML private void onHtmlKeyRelease(KeyEvent e){
+        showUiCount(tNoticia, tNoticiaCount, 2000);
     }
     
     private String[] getEtiquetas(String etiquetas){
