@@ -18,6 +18,7 @@ import org.openqa.selenium.WebDriver;
 public class MainFX extends Application {
     public static WebDriver driver;
     public static Stage stage;
+    public static String[] args;
     
     @Override
     public void start(Stage primaryStage) throws Exception {
@@ -26,18 +27,18 @@ public class MainFX extends Application {
         FXMLLoader loader = new FXMLLoader(getClass().getResource("/mainFXML.fxml"));
         Parent root = loader.load();
         ControllerFX controller = loader.getController();
-        controller.setDriver(driver);
+        controller.setDriver(driver, args);
         
         Scene scene = new Scene(root);
         
-        primaryStage.setTitle("News Sender - Dev SNAPSHOT");
+        primaryStage.setTitle("News Sender - 0.9");
         primaryStage.getIcons().add(new Image("/JoanBotIcon.png"));
         primaryStage.setResizable(false);
         primaryStage.setScene(scene);
         primaryStage.show();
     }
     
-    private EventHandler<WindowEvent> confirmCloseEventHandler = event -> {
+    private final EventHandler<WindowEvent> confirmCloseEventHandler = event -> {
         Alert closeConfirmation = new Alert(
                 Alert.AlertType.CONFIRMATION,
                 "¿Estás seguro de que quieres salir?"

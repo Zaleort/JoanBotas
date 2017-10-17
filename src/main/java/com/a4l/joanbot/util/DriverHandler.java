@@ -12,7 +12,6 @@ import javafx.scene.control.Alert.AlertType;
 import org.apache.commons.io.FileUtils;
 import org.openqa.selenium.Keys;
 import org.openqa.selenium.By;
-import org.openqa.selenium.ElementNotVisibleException;
 import org.openqa.selenium.JavascriptExecutor;
 import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.OutputType;
@@ -355,7 +354,7 @@ public class DriverHandler {
         WebElement etiqueta = driver.findElement(By.id("input-dei-tag"));
         etiqueta.click();
         
-        WebDriverWait wait = new WebDriverWait(driver, 2);
+        WebDriverWait wait = new WebDriverWait(driver, 1);
         
         for (String str : etiquetas) {
             etiqueta = wait.until(ExpectedConditions.elementToBeClickable(etiqueta));
@@ -366,11 +365,13 @@ public class DriverHandler {
             etiqueta.sendKeys(str);
             etiqueta.sendKeys(Keys.RETURN);
             
+            Thread.sleep(150);
+            
             try {
                 WebElement blackList = driver.findElement(By.id("news-tag-error-blacklist"));
                 blackList.click();
                 return false;
-            } catch (NoSuchElementException | ElementNotVisibleException e){
+            } catch (Exception e){
                 
             }
         }
@@ -432,16 +433,27 @@ public class DriverHandler {
         return false;
     }
     
-    public static WebDriver launchDriver(){
+    public static WebDriver launchDriver(String[] args){
+        WebDriver driver = null;
+        
         System.setProperty(
             "webdriver.chrome.driver", 
             "chromedriver.exe");
-
-        ChromeOptions options = new ChromeOptions();
-        options.setHeadless(true);
-        options.addArguments("window-size=1024,768");
-        options.addArguments("disable-gpu");
-        WebDriver driver = MainFX.driver = new ChromeDriver(options);
+        
+        if (args.length > 0){
+            if (args[0].equals("-dev")){
+                ChromeOptions options = new ChromeOptions();
+                options.addArguments("window-size=1024,768");
+                driver = MainFX.driver = new ChromeDriver(options);
+            }
+            
+        } else {
+            ChromeOptions options = new ChromeOptions();
+            options.setHeadless(true);
+            options.addArguments("window-size=1024,768");
+            options.addArguments("disable-gpu");
+            driver = MainFX.driver = new ChromeDriver(options);
+        }
         
         return driver;
     }

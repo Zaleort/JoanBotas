@@ -37,11 +37,13 @@ import org.openqa.selenium.WebDriver;
 
 public class ControllerFX implements Initializable {
     private WebDriver driver;
+    private String[] args;
     private File currentFile = null;
     public static SendNoticia send = null;
     
-    public void setDriver(WebDriver driver){
+    public void setDriver(WebDriver driver, String[] args){
         this.driver = driver;
+        this.args = args;
     }
     
     @FXML private AnchorPane root;
@@ -124,7 +126,7 @@ public class ControllerFX implements Initializable {
         logout.cursorProperty().set(Cursor.HAND);
         logout.setOnAction((ActionEvent e) -> {
             if (DriverHandler.isClosed(driver)){
-            driver = DriverHandler.launchDriver();
+            driver = DriverHandler.launchDriver(args);
             Alert alert = new Alert(Alert.AlertType.WARNING);
                 alert.setTitle("Cierre inesperado de ChromeDriver");
                 alert.setHeaderText(null);
@@ -168,10 +170,10 @@ public class ControllerFX implements Initializable {
         tNoticia.setHtmlText(HTMLUtil.defaultHtml);
     }
     
-    // Verdadero publica, Falso guarda
+    // Verdadero publica, Falso solo guarda
     private void sendNoticia(boolean publish){
         if (DriverHandler.isClosed(driver)){
-            driver = DriverHandler.launchDriver();
+            driver = DriverHandler.launchDriver(args);
             Alert alert = new Alert(Alert.AlertType.WARNING);
                 alert.setTitle("Cierre inesperado de ChromeDriver");
                 alert.setHeaderText(null);
@@ -182,8 +184,8 @@ public class ControllerFX implements Initializable {
         }
 
         if(DriverHandler.isLogged(driver)){
-            String categoria, titulo, subtitulo, noticia, fuentes;
-            String[] etiquetas;
+            final String categoria, titulo, subtitulo, noticia, fuentes;
+            final String[] etiquetas;
             categoria = (String)categorias.getValue();
             titulo = tTitulo.getText();
             subtitulo = tSubtitulo.getText();
@@ -192,15 +194,11 @@ public class ControllerFX implements Initializable {
             etiquetas = getEtiquetas(tEtiquetas.getText());
 
             if (isCorrect(titulo, subtitulo, noticia, etiquetas, fuentes, categoria)){
-                send = new SendNoticia(categoria, titulo, subtitulo, noticia, etiquetas, fuentes, driver, publish);
-                SendProgressController progress = new SendProgressController();
+                SendProgressController progress = new SendProgressController(); 
+                progress.setNoticiaProperties(categoria, titulo, subtitulo, noticia, etiquetas, fuentes, driver, publish);
                 progress.show(MainFX.stage);
-
-                setSendProgressHandlers(progress);
-
-                Thread th = new Thread(send);
-                th.setDaemon(true);
-                th.start();
+                progress.initializeTask();
+                progress.setProgressHandlers();
             }
 
             else {
@@ -235,7 +233,7 @@ public class ControllerFX implements Initializable {
     
     @FXML private void logIn(ActionEvent e) throws InterruptedException{
         if (DriverHandler.isClosed(driver)){
-            driver = DriverHandler.launchDriver();
+            driver = DriverHandler.launchDriver(args);
             Alert alert = new Alert(Alert.AlertType.WARNING);
                 alert.setTitle("Cierre inesperado de ChromeDriver");
                 alert.setHeaderText(null);

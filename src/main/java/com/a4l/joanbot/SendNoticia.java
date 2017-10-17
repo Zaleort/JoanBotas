@@ -10,9 +10,11 @@ import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebDriverException;
 
 public class SendNoticia extends Task<Integer> {
-    private String categoria, titulo, subtitulo, noticia, fuentes;
+
+    private final String categoria, titulo, subtitulo, fuentes;
+    private String noticia;
     private final String[] etiquetas;
-    private boolean publish;
+    private final boolean publish;
     
     private final WebDriver driver;
     
@@ -37,14 +39,13 @@ public class SendNoticia extends Task<Integer> {
 
             String urlP, urlS;
             urlP = DriverHandler.search(kwg.getKeyPrimaria(), driver);
-            
+
             // Si la URL es, no se han encontrado resultados
             if (urlP == null){
                 urlP = DriverHandler.search(kwg.getKeyTerciaria(), driver);
             }
             
             if (this.isCancelled()) return 0;
-            
             
             urlS = DriverHandler.search(kwg.getKeySecundaria(), driver);
             
@@ -110,7 +111,7 @@ public class SendNoticia extends Task<Integer> {
             else return 2;
 
         } catch (InterruptedException ex) {
-            Logger.getLogger(MainFX.class.getName()).log(Level.SEVERE, null, ex);
+            System.out.println("Sleep interumpido");
  
         } catch (WebDriverException we){
             Logger.getLogger(MainFX.class.getName()).log(Level.SEVERE, null, we);
