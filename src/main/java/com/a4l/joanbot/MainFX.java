@@ -31,7 +31,7 @@ public class MainFX extends Application {
         
         Scene scene = new Scene(root);
         
-        primaryStage.setTitle("News Sender - 0.9");
+        primaryStage.setTitle("News Sender - 0.10");
         primaryStage.getIcons().add(new Image("/JoanBotIcon.png"));
         primaryStage.setResizable(false);
         primaryStage.setScene(scene);

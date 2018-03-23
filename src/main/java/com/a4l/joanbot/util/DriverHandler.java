@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Alert.AlertType;
+import javax.swing.JOptionPane;
 import org.apache.commons.io.FileUtils;
 import org.openqa.selenium.Keys;
 import org.openqa.selenium.By;
@@ -110,10 +111,8 @@ public class DriverHandler {
     
     public static void writeNews(WebDriver driver, String news){
         WebElement iframe = driver.findElement(By.id("news-body_ifr"));
-        //driver.switchTo().frame(iframe);
         iframe.click();
         ((JavascriptExecutor) driver).executeScript("arguments[0].contentWindow.document.write(arguments[1])", iframe, news);
-        //((JavascriptExecutor)driver).executeScript("arguments[0].value = arguments[1];", iframe, news);
     }
     
     public static void writeFuentes(WebDriver driver, String fuentes){
@@ -372,7 +371,7 @@ public class DriverHandler {
                 blackList.click();
                 return false;
             } catch (Exception e){
-                
+                // Ignore
             }
         }
         
@@ -436,23 +435,31 @@ public class DriverHandler {
     public static WebDriver launchDriver(String[] args){
         WebDriver driver = null;
         
-        System.setProperty(
-            "webdriver.chrome.driver", 
-            "chromedriver.exe");
-        
-        if (args.length > 0){
-            if (args[0].equals("-dev")){
+        try {
+            System.setProperty(
+                "webdriver.chrome.driver", 
+                "chromedriver.exe");
+
+            if (args.length > 0){
+                if (args[0].equals("-dev")){
+                    ChromeOptions options = new ChromeOptions();
+                    options.addArguments("window-size=1024,768");
+                    driver = MainFX.driver = new ChromeDriver(options);
+                }
+
+            } else {
                 ChromeOptions options = new ChromeOptions();
+                options.setHeadless(true);
                 options.addArguments("window-size=1024,768");
+                options.addArguments("disable-gpu");
                 driver = MainFX.driver = new ChromeDriver(options);
             }
             
-        } else {
-            ChromeOptions options = new ChromeOptions();
-            options.setHeadless(true);
-            options.addArguments("window-size=1024,768");
-            options.addArguments("disable-gpu");
-            driver = MainFX.driver = new ChromeDriver(options);
+        } catch (IllegalStateException e) {
+            JOptionPane.showMessageDialog(null, 
+                    "No se ha encontrado el archivo ChromeDriver.exe, por favor, asegúrese de que se encuentra en la carpeta de NewsSender", 
+                    "ChromeDriver Error", JOptionPane.ERROR_MESSAGE);
+            System.exit(0);
         }
         
         return driver;
